@@ -1,0 +1,27 @@
+Index: src/mem-system/mem-system.h
+===================================================================
+--- src/mem-system/mem-system.h	(revision 1265)
++++ src/mem-system/mem-system.h	(working copy)
+@@ -27,7 +27,7 @@
+ extern int mem_debug_category;
+ 
+ #define mem_tracing() trace_status(mem_trace_category)
+-#define mem_trace(...) trace(mem_trace_category, __VA_ARGS__)
++#define mem_trace(...) custom_trace(mem_trace_category, __VA_ARGS__)
+ #define mem_trace_header(...) trace_header(mem_trace_category, __VA_ARGS__)
+ extern int mem_trace_category;
+ 
+Index: src/lib/esim/trace.h
+===================================================================
+--- src/lib/esim/trace.h	(revision 1265)
++++ src/lib/esim/trace.h	(working copy)
+@@ -28,7 +28,8 @@
+ #define trace_status(category) ((category) ? __trace_status((category)) : 0)
+ int __trace_status(int category);
+ 
+-#define trace(category, ...) ((category) ? \
++#define trace(category, ...)
++#define custom_trace(category, ...) ((category) ? \
+ 	__trace((category), 1, __VA_ARGS__) : (void) 0)
+ #define trace_header(category, ...) ((category) ? \
+ 	__trace((category), 0, __VA_ARGS__) : (void) 0)
