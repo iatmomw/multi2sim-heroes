@@ -2,20 +2,21 @@ Index: src/mem-system/module.c
 ===================================================================
 --- src/mem-system/module.c	(revision 1265)
 +++ src/mem-system/module.c	(working copy)
-@@ -124,6 +124,19 @@
+@@ -124,6 +124,20 @@
  	stack->event_queue_item = event_queue_item;
  	stack->client_info = client_info;
  
 +	if (mod->kind == mod_kind_cache_bypass) {
-+		stack->target_mod = mod;
-+		while(mod_get_low_mod(stack->target_mod, stack->tag)) {
++		stack->mod = mod;
++		while(mod_get_low_mod(stack->mod, stack->tag)) {
 +			warning("Hack: mod_kind_cache_bypass module pushed to next level cache");
-+			stack->target_mod = mod_get_low_mod(stack->target_mod, stack->tag);
-+			stack->peer = mod_stack_set_peer(stack->target_mod, stack->state);			
++			stack->mod = mod_get_low_mod(stack->mod, stack->tag);
++			stack->peer = mod_stack_set_peer(stack->mod, stack->state);			
 +			stack->request_dir = mod_request_up_down;
 +		}
 +		warning("Hack: kind of module changed from mod_kind_cache_bypass to mod_kind_main_memory");
 +
++		stack->mod->kind = mod_kind_main_memory;
 +		mod->kind = mod_kind_main_memory;
 +	}
 +
