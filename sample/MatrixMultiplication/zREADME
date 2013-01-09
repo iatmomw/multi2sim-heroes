@@ -1,0 +1,15 @@
+MatrixMultiplication host program and device kernel for use with multi2sim simulations and native execution
+
+Current Status:
+* Thoroughly tested as correct for native execution
+* Tested as correct for simulated execution up until the point that a kernel binary is loaded (I lack an environment to compile kernels at the moment)
+
+To toggle between native and simulation targets two parameters must be changed.
+
+Makefile:
+Native - LIBS = $(N_LIBS)
+Sim    - LIBS = $(S_LIBS)
+
+src/MatrixMultiplication.c:
+Native - #define NATIVE_EXECUTION
+Sim    - /* #define NATIVE_EXECUTION */
