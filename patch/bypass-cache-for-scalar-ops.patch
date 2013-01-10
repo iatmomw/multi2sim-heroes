@@ -1,6 +1,6 @@
 Index: src/arch/southern-islands/timing/scalar-unit.c
 ===================================================================
---- src/arch/southern-islands/timing/scalar-unit.c	(revision 1265)
+--- src/arch/southern-islands/timing/scalar-unit.c	(revision 1266)
 +++ src/arch/southern-islands/timing/scalar-unit.c	(working copy)
 @@ -352,9 +352,17 @@
  			/* FIXME Get rid of dependence on wavefront here */
@@ -22,7 +22,7 @@ Index: src/arch/southern-islands/timing/scalar-unit.c
  			uop->wavefront_pool_entry->lgkm_cnt++;
 Index: src/mem-system/module.h
 ===================================================================
---- src/mem-system/module.h	(revision 1265)
+--- src/mem-system/module.h	(revision 1266)
 +++ src/mem-system/module.h	(working copy)
 @@ -56,6 +56,7 @@
  {
@@ -34,7 +34,7 @@ Index: src/mem-system/module.h
  };
 Index: src/mem-system/module.c
 ===================================================================
---- src/mem-system/module.c	(revision 1265)
+--- src/mem-system/module.c	(revision 1266)
 +++ src/mem-system/module.c	(working copy)
 @@ -124,6 +124,32 @@
  	stack->event_queue_item = event_queue_item;
