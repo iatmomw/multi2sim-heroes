@@ -1,6 +1,6 @@
 Index: src/mem-system/mem-system.h
 ===================================================================
---- src/mem-system/mem-system.h	(revision 1266)
+--- src/mem-system/mem-system.h	(revision 1274)
 +++ src/mem-system/mem-system.h	(working copy)
 @@ -27,7 +27,7 @@
  extern int mem_debug_category;
@@ -13,7 +13,7 @@ Index: src/mem-system/mem-system.h
  
 Index: src/lib/esim/trace.h
 ===================================================================
---- src/lib/esim/trace.h	(revision 1266)
+--- src/lib/esim/trace.h	(revision 1274)
 +++ src/lib/esim/trace.h	(working copy)
 @@ -28,7 +28,8 @@
  #define trace_status(category) ((category) ? __trace_status((category)) : 0)
