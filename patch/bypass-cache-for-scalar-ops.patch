@@ -36,7 +36,7 @@ Index: src/mem-system/module.c
 ===================================================================
 --- src/mem-system/module.c	(revision 1274)
 +++ src/mem-system/module.c	(working copy)
-@@ -124,6 +124,32 @@
+@@ -124,6 +124,30 @@
  	stack->event_queue_item = event_queue_item;
  	stack->client_info = client_info;
  
@@ -46,19 +46,17 @@ Index: src/mem-system/module.c
 +		/* point the stack's module at the current memory module */
 +		stack->mod = mod;
 +		/* while the stack's module has a lower level cache */
-+		while (mod_get_low_mod(stack->mod, stack->tag))
++		while ((stack->target_mod = mod_get_low_mod(stack->mod, stack->tag)))
 +		{
 +			warning("cache_bypass module pushed to next cache");
 +			/* point the stack's module at the lower level cache */
-+			stack->mod = mod_get_low_mod(stack->mod, stack->tag);
++			stack->mod = stack->target_mod;
 +			/* assign the new modules peers to the stack */
 +			stack->peer = mod_stack_set_peer(stack->mod, 
 +				stack->state);
 +		}
 +		/* request is still top down */
 +		stack->request_dir = mod_request_up_down;
-+		/* main memory has no lower level cache */
-+		stack->target_mod = NULL;
 +		/* stack module should now be main memory */
 +		stack->mod->kind = mod_kind_main_memory;
 +		warning("kind of module changed: cache_bypass to main_memory");
