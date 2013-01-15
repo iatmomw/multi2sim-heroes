@@ -1,69 +1,21 @@
 Index: src/arch/southern-islands/timing/scalar-unit.c
 ===================================================================
---- src/arch/southern-islands/timing/scalar-unit.c	(revision 1283)
+--- src/arch/southern-islands/timing/scalar-unit.c	(revision 1285)
 +++ src/arch/southern-islands/timing/scalar-unit.c	(working copy)
-@@ -352,9 +352,17 @@
+@@ -347,6 +347,7 @@
+ 
+ 		if (uop->scalar_mem_read) 
+ 		{
++#if 0
+ 			/* Access global memory */
+ 			uop->global_mem_witness--;
  			/* FIXME Get rid of dependence on wavefront here */
- 			uop->global_mem_access_addr =
- 				uop->wavefront->scalar_work_item->global_mem_access_addr;
-+			/* save global_memory kind */
-+			enum mod_kind_t temp = 
-+				scalar_unit->compute_unit->global_memory->kind;
-+			/* set global_memory kind to bypass cache */
-+			scalar_unit->compute_unit->global_memory->kind =
-+				mod_kind_cache_bypass;
+@@ -355,7 +356,7 @@
  			mod_access(scalar_unit->compute_unit->global_memory,
  				mod_access_load, uop->global_mem_access_addr,
  				&uop->global_mem_witness, NULL, NULL, NULL);
-+			/* restore global_memory kind */
-+			scalar_unit->compute_unit->global_memory->kind = temp;
- 
+-
++#endif
  			/* Increment outstanding memory access count */
  			uop->wavefront_pool_entry->lgkm_cnt++;
-Index: src/mem-system/module.h
-===================================================================
---- src/mem-system/module.h	(revision 1283)
-+++ src/mem-system/module.h	(working copy)
-@@ -56,6 +56,7 @@
- {
- 	mod_kind_invalid = 0,
- 	mod_kind_cache,
-+	mod_kind_cache_bypass, /* Hack: access main memory directly */
- 	mod_kind_main_memory,
- 	mod_kind_local_memory
- };
-Index: src/mem-system/module.c
-===================================================================
---- src/mem-system/module.c	(revision 1283)
-+++ src/mem-system/module.c	(working copy)
-@@ -124,6 +124,30 @@
- 	stack->event_queue_item = event_queue_item;
- 	stack->client_info = client_info;
  
-+	/* FIXME access kind to allow direct access to main memory */
-+	if (mod->kind == mod_kind_cache_bypass)
-+	{
-+		/* point the stack's module at the current memory module */
-+		stack->mod = mod;
-+		/* while the stack's module has a lower level cache */
-+		while ((stack->target_mod = mod_get_low_mod(stack->mod, stack->tag)))
-+		{
-+			warning("cache_bypass module pushed to next cache");
-+			/* point the stack's module at the lower level cache */
-+			stack->mod = stack->target_mod;
-+			/* assign the new modules peers to the stack */
-+			stack->peer = mod_stack_set_peer(stack->mod, 
-+				stack->state);
-+		}
-+		/* request is still top down */
-+		stack->request_dir = mod_request_up_down;
-+		/* stack module should now be main memory */
-+		stack->mod->kind = mod_kind_main_memory;
-+		warning("kind of module changed: cache_bypass to main_memory");
-+		/* make sure access_kind is looked at in next code block */
-+		mod->kind = mod_kind_main_memory;
-+	}
-+
- 	/* Select initial CPU/GPU event */
- 	if (mod->kind == mod_kind_cache || mod->kind == mod_kind_main_memory)
- 	{
