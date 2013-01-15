@@ -1,6 +1,6 @@
 Index: src/arch/southern-islands/timing/scalar-unit.c
 ===================================================================
---- src/arch/southern-islands/timing/scalar-unit.c	(revision 1285)
+--- src/arch/southern-islands/timing/scalar-unit.c	(revision 1286)
 +++ src/arch/southern-islands/timing/scalar-unit.c	(working copy)
 @@ -347,6 +347,7 @@
  
