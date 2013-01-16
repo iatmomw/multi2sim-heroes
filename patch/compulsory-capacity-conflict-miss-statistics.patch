@@ -1,11 +1,45 @@
+Index: src/mem-system/module.c
+===================================================================
+--- src/mem-system/module.c	(revision 1287)
++++ src/mem-system/module.c	(working copy)
+@@ -22,6 +22,7 @@
+ #include <lib/mhandle/mhandle.h>
+ #include <lib/util/debug.h>
+ #include <lib/util/linked-list.h>
++#include <lib/util/hash-table.h>
+ #include <lib/util/misc.h>
+ #include <lib/util/string.h>
+ #include <lib/util/repos.h>
+@@ -63,6 +64,12 @@
+ 	mod->kind = kind;
+ 	mod->latency = latency;
+ 
++	/* Statistics */
++	mod->previouslyCached = hash_table_create(1024, 0);
++	mod->compulsory_misses = 0;
++	mod->capacity_misses = 0;
++	mod->conflict_misses = 0;
++
+ 	/* Ports */
+ 	mod->num_ports = num_ports;
+ 	mod->ports = xcalloc(num_ports, sizeof(struct mod_port_t));
 Index: src/mem-system/module.h
 ===================================================================
 --- src/mem-system/module.h	(revision 1287)
 +++ src/mem-system/module.h	(working copy)
-@@ -195,6 +195,10 @@
+@@ -21,6 +21,7 @@
+ #define MEM_SYSTEM_MODULE_H
+ 
+ #include <stdio.h>
++#include <lib/util/hash-table.h>
+ 
+ 
+ /* Port */
+@@ -195,6 +196,11 @@
  	long long accesses;
  	long long hits;
  
++	struct hash_table_t *previouslyCached;
 +	long long compulsory_misses;
 +	long long capacity_misses;
 +	long long conflict_misses;
