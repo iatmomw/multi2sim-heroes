@@ -1,0 +1,15 @@
+Index: src/mem-system/module.h
+===================================================================
+--- src/mem-system/module.h	(revision 1287)
++++ src/mem-system/module.h	(working copy)
+@@ -195,6 +195,10 @@
+ 	long long accesses;
+ 	long long hits;
+ 
++	long long compulsory_misses;
++	long long capacity_misses;
++	long long conflict_misses;
++
+ 	long long reads;
+ 	long long effective_reads;
+ 	long long effective_read_hits;
