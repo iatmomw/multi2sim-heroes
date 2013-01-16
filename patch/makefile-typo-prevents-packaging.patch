@@ -1,0 +1,12 @@
+Index: runtime/include/Makefile.am
+===================================================================
+--- runtime/include/Makefile.am	(revision 1286)
++++ runtime/include/Makefile.am	(working copy)
+@@ -1,6 +1,6 @@
+ EXTRA_DIST = \
+ 	\
+-	CL\cl.h \
++	CL/cl.h \
+ 	\
+ 	cuda.h \
+ 	cuda_runtime_api.h \
