@@ -1,21 +1,50 @@
+Index: src/mem-system/nmoesi-protocol.c
+===================================================================
+--- src/mem-system/nmoesi-protocol.c	(revision 1290)
++++ src/mem-system/nmoesi-protocol.c	(working copy)
+@@ -1072,8 +1072,33 @@
+ 		if (!stack->retry)
+ 		{
+ 			mod->no_retry_accesses++;
++			mod->previouslyCached[mod->no_retry_accesses % 
++				MOD_ACCESS_CACHE_HISTORY_SIZE] = stack->addr;
+ 			if (stack->hit)
++			{
+ 				mod->no_retry_hits++;
++			}
++			else
++			{
++				int inHistory = 0;
++				int ctr;
++				for(ctr = 0; ctr < mod->no_retry_accesses && 
++					ctr < MOD_ACCESS_CACHE_HISTORY_SIZE;
++					ctr++)
++				{
++					if(mod->previouslyCached[ctr] == 
++						stack->addr)
++					{
++						inHistory = 1;
++						break;
++					}
++				}
++
++				if(!inHistory)
++					mod->compulsory_misses++;
++				else
++					mod->conflict_misses++;
++			}
+ 			
+ 			if (stack->read)
+ 			{
 Index: src/mem-system/module.c
 ===================================================================
 --- src/mem-system/module.c	(revision 1290)
 +++ src/mem-system/module.c	(working copy)
-@@ -22,6 +22,7 @@
- #include <lib/mhandle/mhandle.h>
- #include <lib/util/debug.h>
- #include <lib/util/linked-list.h>
-+#include <lib/util/hash-table.h>
- #include <lib/util/misc.h>
- #include <lib/util/string.h>
- #include <lib/util/repos.h>
-@@ -63,6 +64,12 @@
+@@ -63,6 +63,11 @@
  	mod->kind = kind;
  	mod->latency = latency;
  
 +	/* Statistics */
-+	mod->previouslyCached = hash_table_create(1024, 0);
 +	mod->compulsory_misses = 0;
 +	mod->capacity_misses = 0;
 +	mod->conflict_misses = 0;
@@ -27,19 +56,19 @@ Index: src/mem-system/module.h
 ===================================================================
 --- src/mem-system/module.h	(revision 1290)
 +++ src/mem-system/module.h	(working copy)
-@@ -21,6 +21,7 @@
- #define MEM_SYSTEM_MODULE_H
+@@ -79,6 +79,7 @@
+ };
  
- #include <stdio.h>
-+#include <lib/util/hash-table.h>
+ #define MOD_ACCESS_HASH_TABLE_SIZE  17
++#define MOD_ACCESS_CACHE_HISTORY_SIZE 32000
  
- 
- /* Port */
+ /* Memory module */
+ struct mod_t
 @@ -195,6 +196,11 @@
  	long long accesses;
  	long long hits;
  
-+	struct hash_table_t *previouslyCached;
++	unsigned int previouslyCached[MOD_ACCESS_CACHE_HISTORY_SIZE];
 +	long long compulsory_misses;
 +	long long capacity_misses;
 +	long long conflict_misses;
@@ -47,3 +76,21 @@ Index: src/mem-system/module.h
  	long long reads;
  	long long effective_reads;
  	long long effective_read_hits;
+Index: src/mem-system/mem-system.c
+===================================================================
+--- src/mem-system/mem-system.c	(revision 1290)
++++ src/mem-system/mem-system.c	(working copy)
+@@ -298,6 +298,13 @@
+ 		fprintf(f, "NoRetryNCWriteHits = %lld\n", mod->no_retry_nc_write_hits);
+ 		fprintf(f, "NoRetryNCWriteMisses = %lld\n", mod->no_retry_nc_writes
+ 			- mod->no_retry_nc_write_hits);
++		fpringf(f, "\n");
++		fprintf(f, "NoRetryCompulsoryMisses = %lld\n",
++			mod->compulsory_misses);
++		fprintf(f, "NoRetryCapacityMisses = %lld\n",
++			mod->capacity_misses);
++		fprintf(f, "NoRetryConflictMisses = %lld\n",
++			mod->conflict_misses);
+ 		fprintf(f, "\n\n");
+ 	}
+ 
