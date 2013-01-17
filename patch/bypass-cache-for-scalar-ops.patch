@@ -1,8 +1,8 @@
 Index: src/arch/southern-islands/timing/scalar-unit.c
 ===================================================================
---- src/arch/southern-islands/timing/scalar-unit.c	(revision 1286)
+--- src/arch/southern-islands/timing/scalar-unit.c	(revision 1290)
 +++ src/arch/southern-islands/timing/scalar-unit.c	(working copy)
-@@ -347,6 +347,7 @@
+@@ -322,6 +322,7 @@
  
  		if (uop->scalar_mem_read) 
  		{
@@ -10,7 +10,7 @@ Index: src/arch/southern-islands/timing/scalar-unit.c
  			/* Access global memory */
  			uop->global_mem_witness--;
  			/* FIXME Get rid of dependence on wavefront here */
-@@ -355,7 +356,7 @@
+@@ -330,7 +331,7 @@
  			mod_access(scalar_unit->compute_unit->global_memory,
  				mod_access_load, uop->global_mem_access_addr,
  				&uop->global_mem_witness, NULL, NULL, NULL);

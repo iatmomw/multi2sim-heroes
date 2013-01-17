@@ -1,6 +1,6 @@
 Index: src/mem-system/module.c
 ===================================================================
---- src/mem-system/module.c	(revision 1287)
+--- src/mem-system/module.c	(revision 1290)
 +++ src/mem-system/module.c	(working copy)
 @@ -22,6 +22,7 @@
  #include <lib/mhandle/mhandle.h>
@@ -25,7 +25,7 @@ Index: src/mem-system/module.c
  	mod->ports = xcalloc(num_ports, sizeof(struct mod_port_t));
 Index: src/mem-system/module.h
 ===================================================================
---- src/mem-system/module.h	(revision 1287)
+--- src/mem-system/module.h	(revision 1290)
 +++ src/mem-system/module.h	(working copy)
 @@ -21,6 +21,7 @@
  #define MEM_SYSTEM_MODULE_H
