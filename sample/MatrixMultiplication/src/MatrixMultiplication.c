@@ -160,10 +160,8 @@ int main(int argc, char** argv)
    globalWorkSize[0] = 1024;
    globalWorkSize[1] = 1024;
 
-   cl_event ndrEvt;
-
    /* 6a. Queue a kernel on the device */
-   errcode = clEnqueueNDRangeKernel(clCommandQue, clKernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, &ndrEvt);
+   errcode = clEnqueueNDRangeKernel(clCommandQue, clKernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
    assert(errcode == CL_SUCCESS);
 
    /* 6b. Finish the command buffer
@@ -176,7 +174,7 @@ int main(int argc, char** argv)
    /* 7. Retrieve result from device 
     * The third parameter set to CL_TRUE, makes this a blocking read. The CPU stalls until the data is fully copied
    */
-   errcode = clEnqueueReadBuffer(clCommandQue, d_C, CL_TRUE, 0, mem_size_C, h_C, 0, NULL, &ndrEvt);
+   errcode = clEnqueueReadBuffer(clCommandQue, d_C, CL_TRUE, 0, mem_size_C, h_C, 0, NULL, NULL);
    assert(errcode == CL_SUCCESS);
 
    /* 8. Verify result */
