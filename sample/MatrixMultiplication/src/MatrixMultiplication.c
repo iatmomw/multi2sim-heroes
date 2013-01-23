@@ -166,22 +166,20 @@ int main(int argc, char** argv)
    errcode = clEnqueueNDRangeKernel(clCommandQue, clKernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, &ndrEvt);
    assert(errcode == CL_SUCCESS);
 
-   /* 6b. Flush the command buffer
-    * This means that the kernel is forced to begin executing on the device and control is immediately returned to the host
+   /* 6b. Finish the command buffer
+    * This means that the kernel is forced to begin executing on the device and control is only returned to the host
+    * after the kernel completes
    */
-   errcode = clFlush(clCommandQue);
+   errcode = clFinish(clCommandQue);
    assert(errcode == CL_SUCCESS);
 
-   /* 7. Stall the host until the device finishes executing the kernel */
-   clWaitForEvents(1, &ndrEvt);
-
-   /* 8. Retrieve result from device 
+   /* 7. Retrieve result from device 
     * The third parameter set to CL_TRUE, makes this a blocking read. The CPU stalls until the data is fully copied
    */
    errcode = clEnqueueReadBuffer(clCommandQue, d_C, CL_TRUE, 0, mem_size_C, h_C, 0, NULL, &ndrEvt);
    assert(errcode == CL_SUCCESS);
 
-   /* 9. Verify result */
+   /* 8. Verify result */
    #ifdef VERIFY
    for(i = 0; i < HC; i++) {
       for(j = 0; j < WC; j++) {
@@ -198,7 +196,7 @@ int main(int argc, char** argv)
    #endif
    #endif
 
-   /* 10. Free resources */
+   /* 9. Free resources */
    free(h_A);
    free(h_B);
    free(h_C);
