@@ -162,23 +162,24 @@ int main(int argc, char** argv)
 
    cl_event ndrEvt;
 
+   /* 6a. Queue a kernel on the device */
    errcode = clEnqueueNDRangeKernel(clCommandQue, clKernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, &ndrEvt);
    assert(errcode == CL_SUCCESS);
 
+   /* 6b. Flush the command buffer
+    * This means that the kernel is forced to begin executing on the device and control is immediately returned to the host
+   */
    errcode = clFlush(clCommandQue);
    assert(errcode == CL_SUCCESS);
 
-   /* 7. Wait for kernel to complete */
-   cl_int eventStatus = CL_QUEUED;
-   while(eventStatus != CL_COMPLETE) {
-      clGetEventInfo(ndrEvt, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(cl_int), &eventStatus, NULL);
-   }
+   /* 7. Stall the host until the device finishes executing the kernel */
+   clWaitForEvents(1, &ndrEvt);
 
-   /* 8. Retrieve result from device */
+   /* 8. Retrieve result from device 
+    * The third parameter set to CL_TRUE, makes this a blocking read. The CPU stalls until the data is fully copied
+   */
    errcode = clEnqueueReadBuffer(clCommandQue, d_C, CL_TRUE, 0, mem_size_C, h_C, 0, NULL, &ndrEvt);
    assert(errcode == CL_SUCCESS);
-
-   clWaitForEvents(1, &ndrEvt);
 
    /* 9. Verify result */
    #ifdef VERIFY
