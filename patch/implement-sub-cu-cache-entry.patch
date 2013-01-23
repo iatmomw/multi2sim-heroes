@@ -1,0 +1,144 @@
+Index: src/arch/southern-islands/timing/mem-config.c
+===================================================================
+--- src/arch/southern-islands/timing/mem-config.c	(revision 1307)
++++ src/arch/southern-islands/timing/mem-config.c	(working copy)
+@@ -62,17 +62,29 @@
+ 	/* L1 caches */
+ 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+ 	{
+-		/* L1 cache */
+-		snprintf(section, sizeof section, "Module si-l1-%d", compute_unit_id);
++		/* L1 vector cache */
++		snprintf(section, sizeof section, "Module si-vector-l1-%d", compute_unit_id);
+ 		config_write_string(config, section, "Type", "Cache");
+ 		config_write_string(config, section, "Geometry", "si-geo-l1");
+ 		config_write_string(config, section, "LowNetwork", "si-net-l1-l2");
+ 		config_write_string(config, section, "LowModules", 
+ 			"si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5");
+ 
++		/* L1 scalar cache
++		 * read only
++		 * 16KB
++		 * 4-way associative
++		 * 64B lines
++		 * LRU replacement
++		 * shared between a cluster of up to 4 Compute Units
++		 * backed by the L2 cache
++		 * Scalar reads are 4-64B long and fill adjacent scalar registers.
++		 * 4 banks, with a throughput of 16B/cycle for each of the 4 Compute Units.
++		*/
++
+ 		/* Entry */
+-		snprintf(section, sizeof section, "Entry si-cu-%d", compute_unit_id);
+-		snprintf(str, sizeof str, "si-l1-%d", compute_unit_id);
++		snprintf(section, sizeof section, "Entry si-cu-%d-vector", compute_unit_id);
++		snprintf(str, sizeof str, "si-vector-l1-%d", compute_unit_id);
+ 		config_write_string(config, section, "Arch", "SouthernIslands");
+ 		config_write_int(config, section, "ComputeUnit", compute_unit_id);
+ 		config_write_string(config, section, "Module", str);
+@@ -255,7 +267,7 @@
+ 
+ 	/* Check that entry has not been assigned before */
+ 	compute_unit = si_gpu->compute_units[compute_unit_id];
+-	if (compute_unit->global_memory)
++	if (compute_unit->vector_mem_unit.global_memory)
+ 		fatal("%s: section [%s]: entry from compute unit %d already assigned.\n"
+ 			"\tA different [Entry <name>] section in the memory configuration file has already\n"
+ 			"\tassigned an entry for this particular compute unit. Please review your\n"
+@@ -271,19 +283,19 @@
+ 			file_name, section);
+ 	
+ 	/* Assign module */
+-	compute_unit->global_memory = mem_system_get_mod(module_name);
+-	if (!compute_unit->global_memory)
++	compute_unit->vector_mem_unit.global_memory = mem_system_get_mod(module_name);
++	if (!compute_unit->vector_mem_unit.global_memory)
+ 		fatal("%s: section [%s]: '%s' is not a valid module name.\n"
+ 			"\tThe given module name must match a module declared in a section\n"
+ 			"\t[Module <name>] in the memory configuration file.\n",
+ 			file_name, section, module_name);
+ 	
+ 	/* Add modules to list of memory entries */
+-	linked_list_add(si_emu_arch->mem_entry_mod_list, compute_unit->global_memory);
++	linked_list_add(si_emu_arch->mem_entry_mod_list, compute_unit->vector_mem_unit.global_memory);
+ 	
+ 	/* Debug */
+ 	mem_debug("\tSouthern Islands compute unit %d\n", compute_unit_id);
+-	mem_debug("\t\tEntry -> %s\n", compute_unit->global_memory->name);
++	mem_debug("\t\tEntry -> %s\n", compute_unit->vector_mem_unit.global_memory->name);
+ 	mem_debug("\n");
+ }
+ 
+@@ -299,7 +311,7 @@
+ 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+ 	{
+ 		compute_unit = si_gpu->compute_units[compute_unit_id];
+-		if (!compute_unit->global_memory)
++		if (!compute_unit->vector_mem_unit.global_memory)
+ 			fatal("%s: Southern Islands compute unit %d has no entry to memory.\n"
+ 				"\tPlease add a new [Entry <name>] section in your memory configuration\n"
+ 				"\tfile to associate this compute unit with a memory module.\n",
+Index: src/arch/southern-islands/timing/scalar-unit.c
+===================================================================
+--- src/arch/southern-islands/timing/scalar-unit.c	(revision 1307)
++++ src/arch/southern-islands/timing/scalar-unit.c	(working copy)
+@@ -327,7 +327,7 @@
+ 			/* FIXME Get rid of dependence on wavefront here */
+ 			uop->global_mem_access_addr =
+ 				uop->wavefront->scalar_work_item->global_mem_access_addr;
+-			mod_access(scalar_unit->compute_unit->global_memory,
++			mod_access(scalar_unit->global_memory,
+ 				mod_access_load, uop->global_mem_access_addr,
+ 				&uop->global_mem_witness, NULL, NULL, NULL);
+ 
+Index: src/arch/southern-islands/timing/scalar-unit.h
+===================================================================
+--- src/arch/southern-islands/timing/scalar-unit.h	(revision 1307)
++++ src/arch/southern-islands/timing/scalar-unit.h	(working copy)
+@@ -31,6 +31,8 @@
+ 
+ 	struct si_compute_unit_t *compute_unit;
+ 
++	struct mod_t *global_memory;
++
+ 	/* Statistics */
+ 	long long inst_count;
+ };
+Index: src/arch/southern-islands/timing/vector-mem-unit.c
+===================================================================
+--- src/arch/southern-islands/timing/vector-mem-unit.c	(revision 1307)
++++ src/arch/southern-islands/timing/vector-mem-unit.c	(working copy)
+@@ -236,7 +236,7 @@
+ 			work_item = si_gpu->ndrange->work_items[work_item_id];
+ 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+ 
+-			mod_access(vector_mem->compute_unit->global_memory, access_kind,
++			mod_access(vector_mem->global_memory, access_kind,
+ 				work_item_uop->global_mem_access_addr,
+ 				&uop->global_mem_witness, NULL, NULL, NULL);
+ 			uop->global_mem_witness--;
+Index: src/arch/southern-islands/timing/vector-mem-unit.h
+===================================================================
+--- src/arch/southern-islands/timing/vector-mem-unit.h	(revision 1307)
++++ src/arch/southern-islands/timing/vector-mem-unit.h	(working copy)
+@@ -30,6 +30,8 @@
+ 
+ 	struct si_compute_unit_t *compute_unit;
+ 
++	struct mod_t *global_memory;
++
+ 	/* Statistics */
+ 	long long inst_count;
+ 
+Index: src/arch/southern-islands/timing/compute-unit.h
+===================================================================
+--- src/arch/southern-islands/timing/compute-unit.h	(revision 1307)
++++ src/arch/southern-islands/timing/compute-unit.h	(working copy)
+@@ -59,7 +59,6 @@
+ 	struct si_compute_unit_t *compute_unit_busy_list_next;
+ 
+ 	/* Entry points to memory hierarchy */
+-	struct mod_t *global_memory;
+ 	struct mod_t *local_memory;
+ 
+ 	/* Hardware structures */
