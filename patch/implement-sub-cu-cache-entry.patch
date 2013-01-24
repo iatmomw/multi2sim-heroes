@@ -14,7 +14,7 @@ Index: src/arch/southern-islands/timing/mem-config.c
  
  void si_mem_config_default(struct config_t *config)
  {
-@@ -43,14 +48,23 @@
+@@ -43,14 +48,22 @@
  	/* Only detailed simulation */
  	assert(si_emu_sim_kind == arch_sim_kind_detailed);
  
@@ -29,18 +29,17 @@ Index: src/arch/southern-islands/timing/mem-config.c
  	config_write_string(config, section, "Policy", "LRU");
  
 +	/* Scalar cache geometry for L1 */
-+        snprintf(section, sizeof section, "CacheGeometry si-geo-l1-scalar");
-+        config_write_int(config, section, "Sets", 64);
-+        config_write_int(config, section, "Assoc", 4);
-+        config_write_int(config, section, "BlockSize", 64);
-+        config_write_int(config, section, "Latency", 1);
-+        config_write_string(config, section, "Policy", "LRU");
-+
++	snprintf(section, sizeof section, "CacheGeometry si-geo-l1-scalar");
++	config_write_int(config, section, "Sets", 64);
++	config_write_int(config, section, "Assoc", 4);
++	config_write_int(config, section, "BlockSize", 64);
++	config_write_int(config, section, "Latency", 1);
++	config_write_string(config, section, "Policy", "LRU");
 +
  	/* Cache geometry for L2 */
  	snprintf(section, sizeof section, "CacheGeometry si-geo-l2");
  	config_write_int(config, section, "Sets", 128);
-@@ -62,20 +76,38 @@
+@@ -62,20 +75,38 @@
  	/* L1 caches */
  	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
  	{
@@ -85,45 +84,50 @@ Index: src/arch/southern-islands/timing/mem-config.c
  	}
  
  	/* L2 caches */
-@@ -227,6 +259,7 @@
+@@ -227,8 +258,10 @@
  	char *module_name;
  
  	int compute_unit_id;
 +	int subunit;
  
  	struct si_compute_unit_t *compute_unit;
++	struct mod_t **global_memory;
  
-@@ -253,9 +286,17 @@
+ 	/* Get configuration file name */
+ 	file_name = config_get_file_name(config);
+@@ -253,9 +286,22 @@
  		return;
  	}
  
 +	subunit = config_read_int(config, section, "SubUnit", -1);
 +	if (subunit < 0 || subunit >= SUBUNIT_INVALID)
 +	{
-+                fatal("%s: section [%s]: invalid or missing value for 'SubUnit'",
-+                        file_name, section);
++		fatal("%s: section [%s]: invalid or missing value for 'SubUnit'",
++			file_name, section);
 +	}
 +
++	compute_unit = si_gpu->compute_units[compute_unit_id];
++
++	if (subunit == SUBUNIT_VECTORUNIT)
++		global_memory = &compute_unit->vector_mem_unit.global_memory;
++	if (subunit == SUBUNIT_SCALARUNIT)
++		global_memory = &compute_unit->scalar_unit.global_memory;
++
  	/* Check that entry has not been assigned before */
- 	compute_unit = si_gpu->compute_units[compute_unit_id];
+-	compute_unit = si_gpu->compute_units[compute_unit_id];
 -	if (compute_unit->global_memory)
-+	if ((subunit == SUBUNIT_VECTORUNIT && compute_unit->vector_mem_unit.global_memory) ||
-+	    (subunit == SUBUNIT_SCALARUNIT && compute_unit->scalar_unit.global_memory))
++	if (*global_memory)
  		fatal("%s: section [%s]: entry from compute unit %d already assigned.\n"
  			"\tA different [Entry <name>] section in the memory configuration file has already\n"
  			"\tassigned an entry for this particular compute unit. Please review your\n"
-@@ -271,19 +312,29 @@
+@@ -271,19 +317,19 @@
  			file_name, section);
  	
  	/* Assign module */
 -	compute_unit->global_memory = mem_system_get_mod(module_name);
 -	if (!compute_unit->global_memory)
-+	if (subunit == SUBUNIT_VECTORUNIT)
-+		compute_unit->vector_mem_unit.global_memory = mem_system_get_mod(module_name);
-+	if (subunit == SUBUNIT_SCALARUNIT)
-+		compute_unit->scalar_unit.global_memory = mem_system_get_mod(module_name);
-+	if ((subunit == SUBUNIT_VECTORUNIT && !compute_unit->vector_mem_unit.global_memory) ||
-+	    (subunit == SUBUNIT_SCALARUNIT && !compute_unit->scalar_unit.global_memory))
++	*global_memory = mem_system_get_mod(module_name);
++	if (!(*global_memory))
  		fatal("%s: section [%s]: '%s' is not a valid module name.\n"
  			"\tThe given module name must match a module declared in a section\n"
  			"\t[Module <name>] in the memory configuration file.\n",
@@ -131,23 +135,17 @@ Index: src/arch/southern-islands/timing/mem-config.c
  	
  	/* Add modules to list of memory entries */
 -	linked_list_add(si_emu_arch->mem_entry_mod_list, compute_unit->global_memory);
-+	if (subunit == SUBUNIT_VECTORUNIT)
-+		linked_list_add(si_emu_arch->mem_entry_mod_list, compute_unit->vector_mem_unit.global_memory);
-+	if (subunit == SUBUNIT_SCALARUNIT)
-+		linked_list_add(si_emu_arch->mem_entry_mod_list, compute_unit->scalar_unit.global_memory);
++	linked_list_add(si_emu_arch->mem_entry_mod_list, *global_memory);
  	
  	/* Debug */
 -	mem_debug("\tSouthern Islands compute unit %d\n", compute_unit_id);
 -	mem_debug("\t\tEntry -> %s\n", compute_unit->global_memory->name);
 +	mem_debug("\tSouthern Islands compute unit %d, SubUnit %d\n", compute_unit_id, subunit);
-+	if (subunit == SUBUNIT_VECTORUNIT)
-+		mem_debug("\t\tEntry -> %s\n", compute_unit->vector_mem_unit.global_memory->name);
-+	if (subunit == SUBUNIT_SCALARUNIT)
-+		mem_debug("\t\tEntry -> %s\n", compute_unit->scalar_unit.global_memory->name);
++	mem_debug("\t\tEntry -> %s\n", (*global_memory)->name);
  	mem_debug("\n");
  }
  
-@@ -299,7 +350,7 @@
+@@ -299,7 +345,7 @@
  	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
  	{
  		compute_unit = si_gpu->compute_units[compute_unit_id];
