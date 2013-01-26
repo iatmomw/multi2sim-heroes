@@ -2,7 +2,15 @@ Index: src/arch/southern-islands/timing/mem-config.c
 ===================================================================
 --- src/arch/southern-islands/timing/mem-config.c	(revision 1307)
 +++ src/arch/southern-islands/timing/mem-config.c	(working copy)
-@@ -63,19 +63,36 @@
+@@ -27,6 +27,7 @@
+ #include <lib/util/string.h>
+ #include <mem-system/mem-system.h>
+ #include <mem-system/module.h>
++#include <string.h>
+ 
+ #include "mem-config.h"
+ #include "gpu.h"
+@@ -63,19 +64,36 @@
  	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
  	{
  		/* L1 cache */
@@ -30,46 +38,52 @@ Index: src/arch/southern-islands/timing/mem-config.c
 +		snprintf(str, sizeof str, "si-l1-%d-vector", compute_unit_id);
  		config_write_string(config, section, "Arch", "SouthernIslands");
  		config_write_int(config, section, "ComputeUnit", compute_unit_id);
-+		config_write_int(config, section, "SubUnit", SUBUNIT_VECTORUNIT);
++		config_write_string(config, section, "SubUnit", "VectorUnit");
  		config_write_string(config, section, "Module", str);
 +
 +		snprintf(section, sizeof section, "Entry si-cu-%d-scalar", compute_unit_id);
-+		snprintf(str, sizeof str, "si-l1-%d-scalar", compute_unit_id % 8);
++		snprintf(str, sizeof str, "si-l1-%d-scalar", compute_unit_id / 4);
 +		config_write_string(config, section, "Arch", "SouthernIslands");
 +		config_write_int(config, section, "ComputeUnit", compute_unit_id);
-+		config_write_int(config, section, "SubUnit", SUBUNIT_SCALARUNIT);
++		config_write_string(config, section, "SubUnit", "ScalarUnit");
 +		config_write_string(config, section, "Module", str);
  	}
  
  	/* L2 caches */
-@@ -227,8 +244,10 @@
+@@ -227,8 +245,11 @@
  	char *module_name;
  
  	int compute_unit_id;
-+	int subunit;
++	char *subunit_name;
++	char subunit_name_trimmed[MAX_STRING_SIZE];
  
  	struct si_compute_unit_t *compute_unit;
 +	struct mod_t **global_memory;
  
  	/* Get configuration file name */
  	file_name = config_get_file_name(config);
-@@ -253,9 +272,22 @@
+@@ -253,9 +274,27 @@
  		return;
  	}
  
-+	subunit = config_read_int(config, section, "SubUnit", -1);
-+	if (subunit < 0 || subunit >= SUBUNIT_INVALID)
++	subunit_name = config_read_string(config, section, "SubUnit", NULL);
++	if (!subunit_name)
 +	{
-+		fatal("%s: section [%s]: invalid or missing value for 'SubUnit'",
++		fatal("%s: section [%s]: missing value for 'SubUnit'",
 +			file_name, section);
 +	}
 +
++	str_trim(subunit_name_trimmed, sizeof subunit_name_trimmed, subunit_name);
++
 +	compute_unit = si_gpu->compute_units[compute_unit_id];
 +
-+	if (subunit == SUBUNIT_VECTORUNIT)
++	if (!strcasecmp(subunit_name_trimmed, "VectorUnit"))
 +		global_memory = &compute_unit->vector_mem_unit.global_memory;
-+	if (subunit == SUBUNIT_SCALARUNIT)
++	else if (!strcasecmp(subunit_name_trimmed, "ScalarUnit"))
 +		global_memory = &compute_unit->scalar_unit.global_memory;
++	else
++		fatal("%s: section [%s]: invalid value for 'SubUnit'",
++			file_name, section);
 +
  	/* Check that entry has not been assigned before */
 -	compute_unit = si_gpu->compute_units[compute_unit_id];
@@ -78,7 +92,7 @@ Index: src/arch/southern-islands/timing/mem-config.c
  		fatal("%s: section [%s]: entry from compute unit %d already assigned.\n"
  			"\tA different [Entry <name>] section in the memory configuration file has already\n"
  			"\tassigned an entry for this particular compute unit. Please review your\n"
-@@ -271,19 +303,19 @@
+@@ -271,19 +310,19 @@
  			file_name, section);
  	
  	/* Assign module */
@@ -98,12 +112,12 @@ Index: src/arch/southern-islands/timing/mem-config.c
  	/* Debug */
 -	mem_debug("\tSouthern Islands compute unit %d\n", compute_unit_id);
 -	mem_debug("\t\tEntry -> %s\n", compute_unit->global_memory->name);
-+	mem_debug("\tSouthern Islands compute unit %d, SubUnit %d\n", compute_unit_id, subunit);
++	mem_debug("\tSouthern Islands compute unit %d, SubUnit %s\n", compute_unit_id, subunit_name_trimmed);
 +	mem_debug("\t\tEntry -> %s\n", (*global_memory)->name);
  	mem_debug("\n");
  }
  
-@@ -299,7 +331,7 @@
+@@ -299,7 +338,7 @@
  	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
  	{
  		compute_unit = si_gpu->compute_units[compute_unit_id];
@@ -168,19 +182,7 @@ Index: src/arch/southern-islands/timing/compute-unit.h
 ===================================================================
 --- src/arch/southern-islands/timing/compute-unit.h	(revision 1307)
 +++ src/arch/southern-islands/timing/compute-unit.h	(working copy)
-@@ -43,6 +43,11 @@
- void si_reg_file_inverse_rename(struct si_compute_unit_t *compute_unit,
- 	int physical_register, struct si_work_item_t **work_item, int *logical_register);
- 
-+enum {
-+	SUBUNIT_VECTORUNIT = 0,
-+	SUBUNIT_SCALARUNIT,
-+	SUBUNIT_INVALID
-+};
- 
- 
- struct si_compute_unit_t
-@@ -59,7 +64,6 @@
+@@ -59,7 +59,6 @@
  	struct si_compute_unit_t *compute_unit_busy_list_next;
  
  	/* Entry points to memory hierarchy */
