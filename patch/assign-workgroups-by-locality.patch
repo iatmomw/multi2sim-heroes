@@ -15,7 +15,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  	/* Allocate work-groups to compute units */
  	while (si_gpu->compute_unit_ready_list_head && ndrange->pending_list_head)
 -		si_compute_unit_map_work_group(si_gpu->compute_unit_ready_list_head,
-+		si_compute_unit_map_work_group(si_gpu->compute_units[ndrange->pending_list_head->id % si_gpu_num_compute_units],
++		si_compute_unit_map_work_group(si_gpu->compute_units[(ndrange->pending_list_head->id / si_gpu->work_groups_per_compute_unit) % si_gpu_num_compute_units],
  			ndrange->pending_list_head);
  
  	/* One more cycle */
