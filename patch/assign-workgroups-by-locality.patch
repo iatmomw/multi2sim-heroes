@@ -1,6 +1,6 @@
 Index: src/arch/southern-islands/timing/gpu.c
 ===================================================================
---- src/arch/southern-islands/timing/gpu.c	(revision 1358)
+--- src/arch/southern-islands/timing/gpu.c	(revision 1390)
 +++ src/arch/southern-islands/timing/gpu.c	(working copy)
 @@ -23,6 +23,7 @@
  #include <arch/southern-islands/asm/bin-file.h>
@@ -10,12 +10,14 @@ Index: src/arch/southern-islands/timing/gpu.c
  #include <driver/opencl-old/southern-islands/kernel.h>
  #include <lib/esim/esim.h>
  #include <lib/esim/trace.h>
-@@ -1298,7 +1299,7 @@
- 
- 	/* Allocate work-groups to compute units */
- 	while (si_gpu->compute_unit_ready_list_head && ndrange->pending_list_head)
--		si_compute_unit_map_work_group(si_gpu->compute_unit_ready_list_head,
-+		si_compute_unit_map_work_group(si_gpu->compute_units[(ndrange->pending_list_head->id / si_gpu->work_groups_per_compute_unit) % si_gpu_num_compute_units],
+@@ -1382,7 +1383,9 @@
+ 		ndrange->pending_list_head)
+ 	{
+ 		si_compute_unit_map_work_group(
+-			si_gpu->compute_unit_ready_list_head,
++			si_gpu->compute_units[(ndrange->pending_list_head->id 
++				/ si_gpu->work_groups_per_compute_unit) 
++				% si_gpu_num_compute_units],
  			ndrange->pending_list_head);
+ 	}
  
- 	/* One more cycle */
