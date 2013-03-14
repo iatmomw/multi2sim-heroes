@@ -1,9 +1,6 @@
 use strict;
 use warnings;
 
-open(my $in,'mem-report.log') || die;
-
-my @match;
 my $ignore = 0;
 
 # Column Headers
@@ -46,7 +43,7 @@ print " " . "\t";
 print "NoRetryAccesses" . "\t";
 print "NoRetryHits" . "\t";
 
-while (my $line = <$in>) {
+while (my $line = <>) {
   chomp($line);
 
   # Ignore networks and global memory segments 
@@ -74,7 +71,3 @@ while (my $line = <$in>) {
     }
   }
 }
-
-close($in) || die;
-
-print @match;
