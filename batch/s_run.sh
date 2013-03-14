@@ -18,7 +18,7 @@ else
 	mkdir $1
 fi
 
-../$1/bin/m2s --x86-sim detailed --si-sim detailed	\
+m2s --x86-sim detailed --si-sim detailed	\
 --mem-config     ../mem_config/$2	\
 --si-report      ./$1/$3_$4_si_report.txt				\
 --mem-report     ./$1/$3_$4_mem_report.txt				\
