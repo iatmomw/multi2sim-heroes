@@ -27,24 +27,33 @@ Index: src/arch/southern-islands/timing/gpu.c
  /* Device parameters */
  int si_gpu_num_compute_units = 32;
  
-@@ -1380,9 +1391,20 @@
+@@ -1380,9 +1391,29 @@
  	while (si_gpu->compute_unit_ready_list_head && 
  		ndrange->pending_list_head)
  	{
 -		si_compute_unit_map_work_group(
 -			si_gpu->compute_unit_ready_list_head,
 -			ndrange->pending_list_head);
++		int preferredCU;
++
 +		switch(si_gpu_workgroup_scheduling_policy) {
++		case si_gpu_workgroup_scheduling_policy_userlocality:
++			preferredCU = (ndrange->pending_list_head->id
++				/ si_gpu->work_groups_per_compute_unit)
++				% si_gpu_num_compute_units;
++
++			if(DOUBLE_LINKED_LIST_MEMBER(si_gpu, compute_unit_ready,
++				si_gpu->compute_units[preferredCU])) {
++					si_compute_unit_map_work_group(
++						si_gpu->compute_units[preferredCU],
++						ndrange->pending_list_head);
++					break;
++			} else {
++				/* Fall through */
++			}
 +		case si_gpu_workgroup_scheduling_policy_firstavailable:
 +			si_compute_unit_map_work_group(
 +				si_gpu->compute_unit_ready_list_head,
-+				ndrange->pending_list_head);
-+			break;
-+		case si_gpu_workgroup_scheduling_policy_userlocality:
-+			si_compute_unit_map_work_group(
-+				si_gpu->compute_units[(ndrange->pending_list_head->id 
-+					/ si_gpu->work_groups_per_compute_unit) 
-+					% si_gpu_num_compute_units],
 +				ndrange->pending_list_head);
 +			break;
 +		}
