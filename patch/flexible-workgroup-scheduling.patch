@@ -1,0 +1,71 @@
+Index: src/arch/southern-islands/timing/gpu.c
+===================================================================
+--- src/arch/southern-islands/timing/gpu.c	(revision 1461)
++++ src/arch/southern-islands/timing/gpu.c	(working copy)
+@@ -23,6 +23,7 @@
+ #include <arch/southern-islands/asm/bin-file.h>
+ #include <arch/southern-islands/emu/emu.h>
+ #include <arch/southern-islands/emu/ndrange.h>
++#include <arch/southern-islands/emu/work-group.h>
+ #include <lib/esim/esim.h>
+ #include <lib/esim/trace.h>
+ #include <lib/mhandle/mhandle.h>
+@@ -325,6 +326,16 @@
+ };
+ enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
+ 
++struct str_map_t si_gpu_workgroup_scheduling_policy_map =
++{
++	2, {
++		{ "FirstAvailable", si_gpu_workgroup_scheduling_policy_firstavailable },
++		{ "UserLocality"  , si_gpu_workgroup_scheduling_policy_userlocality }
++	} 
++};
++enum si_gpu_workgroup_scheduling_policy_t si_gpu_workgroup_scheduling_policy = 
++	si_gpu_workgroup_scheduling_policy_firstavailable;
++
+ /* Device parameters */
+ int si_gpu_num_compute_units = 32;
+ 
+@@ -1380,9 +1391,20 @@
+ 	while (si_gpu->compute_unit_ready_list_head && 
+ 		ndrange->pending_list_head)
+ 	{
+-		si_compute_unit_map_work_group(
+-			si_gpu->compute_unit_ready_list_head,
+-			ndrange->pending_list_head);
++		switch(si_gpu_workgroup_scheduling_policy) {
++		case si_gpu_workgroup_scheduling_policy_firstavailable:
++			si_compute_unit_map_work_group(
++				si_gpu->compute_unit_ready_list_head,
++				ndrange->pending_list_head);
++			break;
++		case si_gpu_workgroup_scheduling_policy_userlocality:
++			si_compute_unit_map_work_group(
++				si_gpu->compute_units[(ndrange->pending_list_head->id 
++					/ si_gpu->work_groups_per_compute_unit) 
++					% si_gpu_num_compute_units],
++				ndrange->pending_list_head);
++			break;
++		}
+ 	}
+ 
+ 	/* One more cycle */
+Index: src/arch/southern-islands/timing/gpu.h
+===================================================================
+--- src/arch/southern-islands/timing/gpu.h	(revision 1461)
++++ src/arch/southern-islands/timing/gpu.h	(working copy)
+@@ -106,6 +106,13 @@
+ 	si_gpu_register_alloc_work_group
+ } si_gpu_register_alloc_granularity;
+ 
++extern struct str_map_t si_gpu_workgroup_scheduling_policy_map;
++extern enum si_gpu_workgroup_scheduling_policy_t
++{
++	si_gpu_workgroup_scheduling_policy_firstavailable = 0,
++	si_gpu_workgroup_scheduling_policy_userlocality
++} si_gpu_workgroup_scheduling_policy;
++
+ /* User configurable options */
+ 
+ extern int si_gpu_num_compute_units;
