@@ -1,0 +1,52 @@
+Index: Makefile
+===================================================================
+--- Makefile	(revision 4)
++++ Makefile	(working copy)
+@@ -1,9 +1,3 @@
+-AESEncryptDecrypt_FILES = \
+-	AESEncryptDecrypt/AESEncryptDecrypt \
+-	AESEncryptDecrypt/AESEncryptDecrypt_Kernels.bin \
+-	AESEncryptDecrypt/benchmark.ini \
+-	AESEncryptDecrypt/input512.bmp
+-
+ BinarySearch_FILES = \
+ 	BinarySearch/benchmark.ini \
+ 	BinarySearch/BinarySearch \
+@@ -19,17 +13,6 @@
+ 	BitonicSort/BitonicSort \
+ 	BitonicSort/BitonicSort_Kernels.bin
+ 
+-BlackScholes_FILES = \
+-	BlackScholes/benchmark.ini \
+-	BlackScholes/BlackScholes \
+-	BlackScholes/BlackScholes_Kernels.bin
+-
+-BoxFilter_FILES = \
+-	BoxFilter/benchmark.ini \
+-	BoxFilter/BoxFilter \
+-	BoxFilter/BoxFilter_Input.bmp \
+-	BoxFilter/BoxFilter_Kernels.bin
+-
+ DCT_FILES = \
+ 	DCT/benchmark.ini \
+ 	DCT/DCT \
+@@ -103,6 +86,11 @@
+ 	ScanLargeArrays/ScanLargeArrays \
+ 	ScanLargeArrays/ScanLargeArrays_Kernels.bin
+ 
++SimpleConvolution_FILES = \
++	SimpleConvolution/benchmark.ini \
++	SimpleConvolution/SimpleConvolution \
++	SimpleConvolution/SimpleConvolution_Kernels.bin
++
+ SobelFilter_FILES = \
+ 	SobelFilter/benchmark.ini \
+ 	SobelFilter/data/images/1.bmp \
+@@ -159,6 +147,7 @@
+ 	$(RecursiveGaussian_FILES) \
+ 	$(Reduction_FILES) \
+ 	$(ScanLargeArrays_FILES) \
++	$(SimpleConvolution_FILES) \
+ 	$(SobelFilter_FILES) \
+ 	$(URNG_FILES)
+ 
