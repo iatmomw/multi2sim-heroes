@@ -14,7 +14,6 @@
 # long time
 ./s_run.sh multi2sim_1323_comp mem-config-default-scalar-separate RadixSort COMP_VS -x 524288
 ./s_run.sh multi2sim_1323_comp mem-config-default-scalar-separate Histogram COMP_VS -x 2048 -y 2048
-./s_run.sh multi2sim_1323_comp mem-config-default-scalar-separate BlackScholes COMP_VS -x 1048576
 ./s_run.sh multi2sim_1323_comp mem-config-default-scalar-separate BinomialOption COMP_VS -x 512
 
 #not yet
