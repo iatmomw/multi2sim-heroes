@@ -1,0 +1,17 @@
+Index: src/arch/fermi/emu/emu.c
+===================================================================
+--- src/arch/fermi/emu/emu.c	(revision 1466)
++++ src/arch/fermi/emu/emu.c	(working copy)
+@@ -106,8 +106,10 @@
+ 		frm_grid_free(frm_emu->grid_list_head);
+ 
+ 	/* Free CUDA object list */
+-	cuda_object_free_all();
+-	linked_list_free(cuda_object_list);
++	if(cuda_object_list) {
++		cuda_object_free_all();
++		linked_list_free(cuda_object_list);
++	}
+ 
+ 	frm_isa_done();
+ 
