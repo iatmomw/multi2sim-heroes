@@ -1,0 +1,14 @@
+Index: src/arch/southern-islands/emu/wavefront.c
+===================================================================
+--- src/arch/southern-islands/emu/wavefront.c	(revision 1466)
++++ src/arch/southern-islands/emu/wavefront.c	(working copy)
+@@ -869,8 +869,7 @@
+ 	assert(num_regs == 4);
+ 	assert(sizeof(buf_desc) == 16);
+ 	assert(uav < SI_EMU_MAX_NUM_UAVS);
+-	assert(ndrange->uav_table_entries[uav].valid);
+-
++	
+ 	buf_desc_addr = ndrange->uav_table + uav*SI_EMU_UAV_TABLE_ENTRY_SIZE;
+ 
+ 	/* Read a descriptor from the constant buffer table (located 
