@@ -18,6 +18,5 @@
 
 #not yet
 #./s_run.sh multi2sim_1323_comp mem-config-default-scalar-separate DwtHaar1D COMP_VS -x 1048576
-#./s_run.sh multi2sim_1323_comp mem-config-default-scalar-separate BoxFilter COMP_VS -x 32
 #./s_run.sh multi2sim_1323_comp mem-config-default-scalar-separate BinarySearch COMP_VS -s 32 -x 16384
 #./s_run.sh multi2sim_1323_comp mem-config-default-scalar-separate PrefixSum COMP_VS -x 16384
