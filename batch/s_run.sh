@@ -21,5 +21,5 @@ fi
 m2s --x86-sim detailed --si-sim detailed	\
 --si-report      ./$1/$3_$4_si_report.txt				\
 --mem-report     ./$1/$3_$4_mem_report.txt				\
-../m2s-bench-amdapp-2.5-si/$3/$3 --load $3_Kernels.bin -q $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} 2> ./$1/$3_$4_log
+/usr/local/bin/m2s-bench-amdapp-2.5-si/$3/$3 --load $3_Kernels.bin -q $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} 2> ./$1/$3_$4_log
 #--trace          ./$1/$3_$4_trace.gz					\
