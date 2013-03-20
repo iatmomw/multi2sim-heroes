@@ -1,0 +1,84 @@
+Index: src/driver/opengl/buffer-obj.c
+===================================================================
+--- src/driver/opengl/buffer-obj.c	(revision 1478)
++++ src/driver/opengl/buffer-obj.c	(working copy)
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include <assert.h>
++#include <pthread.h>
+ 
+ #include <lib/mhandle/mhandle.h>
+ #include <lib/util/debug.h>
+Index: src/driver/opengl/buffer-obj.h
+===================================================================
+--- src/driver/opengl/buffer-obj.h	(revision 1478)
++++ src/driver/opengl/buffer-obj.h	(working copy)
+@@ -23,6 +23,7 @@
+ #include <GL/glut.h>
+ #include <stdio.h>
+ #include <stdio.h>
++#include <pthread.h>
+ 
+ struct linked_list_t;
+ 
+Index: src/driver/opengl/program.c
+===================================================================
+--- src/driver/opengl/program.c	(revision 1478)
++++ src/driver/opengl/program.c	(working copy)
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include <assert.h>
++#include <pthread.h>
+ 
+ #include <arch/southern-islands/emu/opengl-bin-file.h>
+ #include <arch/southern-islands/emu/isa.h>
+@@ -56,7 +57,7 @@
+ 
+ 	if (prg->ref_count < 0)
+ 	{
+-		fatal("Program #%d reference count < 0\n");
++		fatal("Program #%d reference count < 0\n", prg->id);
+ 	}
+ }
+ 
+@@ -83,7 +84,7 @@
+ 	/* Return */
+ 	return prg;
+ }
+-
++#if 0
+ static unsigned int *opengl_program_get_shader_id_obj(struct opengl_program_t* prg)
+ {
+ 	unsigned int *shdr_id;
+@@ -97,7 +98,7 @@
+ 	}
+ 	return NULL;
+ }
+-
++#endif
+ /* Free doesn't check flags */
+ void opengl_program_free(struct opengl_program_t *prg)
+ {
+@@ -258,7 +259,7 @@
+ 		if (ctx->current_program)
+ 		{
+ 			/* Dereference current  program */
+-			opengl_program_dereference(&ctx->current_program);
++			opengl_program_dereference(ctx->current_program);
+ 
+ 			/* Reference and update binding point */
+ 			opengl_program_reference(prg);
+Index: src/driver/opengl/program.h
+===================================================================
+--- src/driver/opengl/program.h	(revision 1478)
++++ src/driver/opengl/program.h	(working copy)
+@@ -22,6 +22,7 @@
+ 
+ #include <GL/glut.h>
+ #include <stdio.h>
++#include <pthread.h>
+ 
+ #define OPENGL_PROGRAM_TABLE_INIT_SIZE	16
+ 
