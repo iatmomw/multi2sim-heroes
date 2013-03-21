@@ -10,7 +10,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  #include <lib/esim/esim.h>
  #include <lib/esim/trace.h>
  #include <lib/mhandle/mhandle.h>
-@@ -323,6 +324,16 @@
+@@ -323,6 +324,17 @@
  };
  enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
  
@@ -21,13 +21,26 @@ Index: src/arch/southern-islands/timing/gpu.c
 +		{ "UserLocality"  , si_gpu_workgroup_scheduling_policy_userlocality }
 +	} 
 +};
++static long long si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_number] = {0, 0};
 +enum si_gpu_workgroup_scheduling_policy_t si_gpu_workgroup_scheduling_policy = 
 +	si_gpu_workgroup_scheduling_policy_userlocality;
 +
  /* Device parameters */
  int si_gpu_num_compute_units = 32;
  
-@@ -1378,9 +1389,29 @@
+@@ -1329,6 +1341,11 @@
+ 	/* Print statistics */
+ 	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
+ 	fprintf(f, "SimulatedCyclesPerSecond = %.0f\n", cycles_per_sec);
++
++	int ctr;
++	for(ctr = 0; ctr < si_gpu_workgroup_scheduling_policy_number; ctr++) {
++		fprintf(f, "Workgroups assigned with policy %d = %lld\n", ctr, si_gpu_workgroup_scheduling_policy_ctr[ctr]);
++	}
+ }
+ 
+ 
+@@ -1378,9 +1395,31 @@
  	while (si_gpu->compute_unit_ready_list_head && 
  		ndrange->pending_list_head)
  	{
@@ -44,18 +57,20 @@ Index: src/arch/southern-islands/timing/gpu.c
 +
 +			if(DOUBLE_LINKED_LIST_MEMBER(si_gpu, compute_unit_ready,
 +				si_gpu->compute_units[preferredCU])) {
++					si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy]++;
 +					si_compute_unit_map_work_group(
 +						si_gpu->compute_units[preferredCU],
 +						ndrange->pending_list_head);
 +					break;
-+			} else {
-+				/* Fall through */
-+			}
++			} /* else { Fall through } */
 +		case si_gpu_workgroup_scheduling_policy_firstavailable:
++			si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy]++;
 +			si_compute_unit_map_work_group(
 +				si_gpu->compute_unit_ready_list_head,
 +				ndrange->pending_list_head);
 +			break;
++		default:
++			fatal("Unknown scheduling policy %d", si_gpu_workgroup_scheduling_policy);
 +		}
  	}
  
@@ -64,7 +79,7 @@ Index: src/arch/southern-islands/timing/gpu.h
 ===================================================================
 --- src/arch/southern-islands/timing/gpu.h	(revision 1484)
 +++ src/arch/southern-islands/timing/gpu.h	(working copy)
-@@ -106,6 +106,13 @@
+@@ -106,6 +106,14 @@
  	si_gpu_register_alloc_work_group
  } si_gpu_register_alloc_granularity;
  
@@ -72,7 +87,8 @@ Index: src/arch/southern-islands/timing/gpu.h
 +extern enum si_gpu_workgroup_scheduling_policy_t
 +{
 +	si_gpu_workgroup_scheduling_policy_firstavailable = 0,
-+	si_gpu_workgroup_scheduling_policy_userlocality
++	si_gpu_workgroup_scheduling_policy_userlocality,
++	si_gpu_workgroup_scheduling_policy_number
 +} si_gpu_workgroup_scheduling_policy;
 +
  /* User configurable options */
