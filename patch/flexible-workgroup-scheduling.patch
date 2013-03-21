@@ -35,7 +35,7 @@ Index: src/arch/southern-islands/timing/gpu.c
 +
 +	int ctr;
 +	for(ctr = 0; ctr < si_gpu_workgroup_scheduling_policy_number; ctr++) {
-+		fprintf(f, "Workgroups assigned with policy %d = %lld\n", ctr, si_gpu_workgroup_scheduling_policy_ctr[ctr]);
++		fprintf(f, "Workgroups assigned with %s policy = %lld\n", si_gpu_workgroup_scheduling_policy_map.map[ctr].string, si_gpu_workgroup_scheduling_policy_ctr[ctr]);
 +	}
  }
  
