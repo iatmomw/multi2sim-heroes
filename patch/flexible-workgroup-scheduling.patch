@@ -1,3 +1,50 @@
+Index: src/m2s.c
+===================================================================
+--- src/m2s.c	(revision 1484)
++++ src/m2s.c	(working copy)
+@@ -391,7 +391,11 @@
+ 	"      Functional (default) or detailed simulation for the AMD Southern Islands\n"
+ 	"      GPU model.\n"
+ 	"\n"
++	"  --si-workgroup-scheduling-policy (FirstAvailable, UserLocality)\n"
++	"      FirstAvailable (default) or UserLocality workgroup scheduling policy\n"
++	"      for the AMD Southern Islands GPU model.\n"
+ 	"\n"
++	"\n"
+ 	"================================================================================\n"
+ 	"ARM CPU Options\n"
+ 	"================================================================================\n"
+@@ -1073,7 +1077,30 @@
+ 			continue;
+ 		}
+ 
++		/* Southern Islands simulation accuracy */
++		if (!strcmp(argv[argi], "--si-workgroup-scheduling-policy"))
++		{
++			int ctr;
++			si_emulator = 1;
++			m2s_need_argument(argc, argv, argi);
++			argi++;
++			for(ctr = 0; ctr < si_gpu_workgroup_scheduling_policy_number; ctr++) {
++				if(!strcasecmp(argv[argi], si_gpu_workgroup_scheduling_policy_map.map[ctr].string)) {
++					si_gpu_workgroup_scheduling_policy = 
++						str_map_string_case(&si_gpu_workgroup_scheduling_policy_map, 
++                					argv[argi]);
++					break;
++				}
++			}
++			if(ctr == si_gpu_workgroup_scheduling_policy_number) {
++				fatal("option '%s': invalid argument ('%s').\n%s",
++					argv[argi - 1], argv[argi], m2s_err_note);
++			}
+ 
++			continue;
++		}
++
++
+ 		/*
+ 		 * Fermi GPU Options
+ 		 */
 Index: src/arch/southern-islands/timing/gpu.c
 ===================================================================
 --- src/arch/southern-islands/timing/gpu.c	(revision 1484)
@@ -10,7 +57,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  #include <lib/esim/esim.h>
  #include <lib/esim/trace.h>
  #include <lib/mhandle/mhandle.h>
-@@ -323,6 +324,17 @@
+@@ -323,6 +324,16 @@
  };
  enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
  
@@ -22,13 +69,12 @@ Index: src/arch/southern-islands/timing/gpu.c
 +	} 
 +};
 +static long long si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_number] = {0, 0};
-+enum si_gpu_workgroup_scheduling_policy_t si_gpu_workgroup_scheduling_policy = 
-+	si_gpu_workgroup_scheduling_policy_userlocality;
++enum si_gpu_workgroup_scheduling_policy_t si_gpu_workgroup_scheduling_policy;
 +
  /* Device parameters */
  int si_gpu_num_compute_units = 32;
  
-@@ -1329,6 +1341,11 @@
+@@ -1329,6 +1340,11 @@
  	/* Print statistics */
  	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
  	fprintf(f, "SimulatedCyclesPerSecond = %.0f\n", cycles_per_sec);
@@ -40,7 +86,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  }
  
  
-@@ -1378,9 +1395,31 @@
+@@ -1378,9 +1394,31 @@
  	while (si_gpu->compute_unit_ready_list_head && 
  		ndrange->pending_list_head)
  	{
