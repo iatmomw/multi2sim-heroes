@@ -1,0 +1,982 @@
+; CPU part
+[CacheGeometry x86-geo-l1]
+Sets = 16
+Assoc = 2
+BlockSize = 64
+Latency = 1
+
+[CacheGeometry x86-geo-l2]
+Sets = 64 
+Assoc = 4
+BlockSize = 64 
+Latency = 10
+
+; 1 l1 x86 caches
+
+[Module x86-l1-0]
+Type = Cache
+Geometry = x86-geo-l1
+LowNetwork = net-x86-l1-l2
+LowModules = x86-l2-0
+
+; 1 l2 x86 cache
+
+[Module x86-l2-0]
+Type = Cache
+Geometry = x86-geo-l2
+HighNetwork = net-x86-l1-l2
+LowNetwork = net-x86-l2-mm
+LowModules = x86-mm
+
+; 1 x86 mm
+
+[Module x86-mm]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-x86-l2-mm
+
+[Network net-x86-l1-l2]
+DefaultInputBufferSize = 1024 
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 256 
+
+[Network net-x86-l2-mm]
+DefaultInputBufferSize = 1024 
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 256 
+
+[Entry core-0]
+Arch = x86
+Core = 0
+Thread = 0
+DataModule = x86-l1-0
+InstModule = x86-l1-0
+
+; L1 cache is 16KB (1 per compute unit)
+[ CacheGeometry si-geo-l1 ]
+Sets = 64
+Assoc = 4
+BlockSize = 64
+Latency = 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; L1 cache is 128KB (1 per 8 compute unit)
+[ CacheGeometry si-geo-l1sv ]
+Sets = 64
+Assoc = 32
+BlockSize = 64
+Latency = 1
+
+; L2 cache is 128KB (6 for entire GPU)
+[ CacheGeometry si-geo-l2 ]
+Sets = 128
+Assoc = 16
+BlockSize = 64
+Latency = 10
+
+
+; ---- Main Memory ----
+[ Module si-mm-0 ]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-l2-0-to-mm-0
+AddressRange = ADDR DIV 64 MOD 6 EQ 0
+
+[ Module si-mm-1 ]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-l2-1-to-mm-1
+AddressRange = ADDR DIV 64 MOD 6 EQ 1
+
+[ Module si-mm-2 ]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-l2-2-to-mm-2
+AddressRange = ADDR DIV 64 MOD 6 EQ 2
+
+[ Module si-mm-3 ]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-l2-3-to-mm-3
+AddressRange = ADDR DIV 64 MOD 6 EQ 3
+
+[ Module si-mm-4 ]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-l2-4-to-mm-4
+AddressRange = ADDR DIV 64 MOD 6 EQ 4
+
+[ Module si-mm-5 ]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-l2-5-to-mm-5
+AddressRange = ADDR DIV 64 MOD 6 EQ 5
+
+
+; ---- L2 Caches ----
+
+[ Module si-l2-0 ]
+Type = Cache
+Geometry = si-geo-l2
+AddressRange = ADDR DIV 64 MOD 6 EQ 0
+LowNetwork = net-l2-0-to-mm-0
+HighNetwork = net-l1-all-to-l2-all
+LowModules = si-mm-0 
+
+[ Module si-l2-1 ]
+Type = Cache
+Geometry = si-geo-l2
+AddressRange = ADDR DIV 64 MOD 6 EQ 1
+LowNetwork = net-l2-1-to-mm-1
+HighNetwork = net-l1-all-to-l2-all
+LowModules = si-mm-1
+
+[ Module si-l2-2 ]
+Type = Cache
+Geometry = si-geo-l2
+AddressRange = ADDR DIV 64 MOD 6 EQ 2
+LowNetwork = net-l2-2-to-mm-2
+HighNetwork = net-l1-all-to-l2-all
+LowModules = si-mm-2
+
+[ Module si-l2-3 ]
+Type = Cache
+Geometry = si-geo-l2
+AddressRange = ADDR DIV 64 MOD 6 EQ 3
+LowNetwork = net-l2-3-to-mm-3
+HighNetwork = net-l1-all-to-l2-all
+LowModules = si-mm-3
+
+[ Module si-l2-4 ]
+Type = Cache
+Geometry = si-geo-l2
+AddressRange = ADDR DIV 64 MOD 6 EQ 4
+LowNetwork = net-l2-4-to-mm-4
+HighNetwork = net-l1-all-to-l2-all
+LowModules = si-mm-4
+
+[ Module si-l2-5 ]
+Type = Cache
+Geometry = si-geo-l2
+AddressRange = ADDR DIV 64 MOD 6 EQ 5
+LowNetwork = net-l2-5-to-mm-5
+HighNetwork = net-l1-all-to-l2-all
+LowModules = si-mm-5
+
+
+; ---- L1 Caches ----
+
+[ Module si-l1v-cu00 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu01 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu02 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu03 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu04 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu05 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu06 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu07 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu08 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu09 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu10 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu11 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu12 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu13 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu14 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu15 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu16 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu17 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu18 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu19 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu20 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu21 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu22 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu23 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu24 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu25 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu26 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu27 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu28 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu29 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu30 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1v-cu31 ]
+Type = Cache
+Geometry = si-geo-l1sv
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu00 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu01 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu02 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu03 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu04 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu05 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu06 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu07 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu08 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu09 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu10 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu11 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu12 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu13 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu14 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu15 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu16 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu17 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu18 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu19 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu20 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu21 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu22 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu23 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu24 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu25 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu26 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu27 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu28 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu29 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu30 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+[ Module si-l1s-cu31 ]
+Type = Cache
+Geometry = si-geo-l1
+LowNetwork = net-l1-all-to-l2-all
+LowModules = si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5
+
+; ---- Networks ----
+
+[ Network net-l1-all-to-l2-all ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[ Network net-l2-0-to-mm-0 ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[ Network net-l2-1-to-mm-1 ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[ Network net-l2-2-to-mm-2 ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[ Network net-l2-3-to-mm-3 ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[ Network net-l2-4-to-mm-4 ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[ Network net-l2-5-to-mm-5 ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+
+; ---- Associating CUs with L1s ----
+
+[ Entry si-cu-00-vector ]
+Arch = SouthernIslands
+ComputeUnit = 0
+SubUnit = VectorUnit
+Module = si-l1v-cu00
+
+[ Entry si-cu-01-vector ]
+Arch = SouthernIslands
+ComputeUnit = 1
+SubUnit = VectorUnit
+Module = si-l1v-cu00
+
+[ Entry si-cu-02-vector ]
+Arch = SouthernIslands
+ComputeUnit = 2
+SubUnit = VectorUnit
+Module = si-l1v-cu00
+
+[ Entry si-cu-03-vector ]
+Arch = SouthernIslands
+ComputeUnit = 3
+SubUnit = VectorUnit
+Module = si-l1v-cu00
+
+[ Entry si-cu-04-vector ]
+Arch = SouthernIslands
+ComputeUnit = 4
+SubUnit = VectorUnit
+Module = si-l1v-cu00
+
+[ Entry si-cu-05-vector ]
+Arch = SouthernIslands
+ComputeUnit = 5
+SubUnit = VectorUnit
+Module = si-l1v-cu00
+
+[ Entry si-cu-06-vector ]
+Arch = SouthernIslands
+ComputeUnit = 6
+SubUnit = VectorUnit
+Module = si-l1v-cu00
+
+[ Entry si-cu-07-vector ]
+Arch = SouthernIslands
+ComputeUnit = 7
+SubUnit = VectorUnit
+Module = si-l1v-cu00
+
+[ Entry si-cu-08-vector ]
+Arch = SouthernIslands
+ComputeUnit = 8
+SubUnit = VectorUnit
+Module = si-l1v-cu01
+
+[ Entry si-cu-09-vector ]
+Arch = SouthernIslands
+ComputeUnit = 9
+SubUnit = VectorUnit
+Module = si-l1v-cu01
+
+[ Entry si-cu-10-vector ]
+Arch = SouthernIslands
+ComputeUnit = 10
+SubUnit = VectorUnit
+Module = si-l1v-cu01
+
+[ Entry si-cu-11-vector ]
+Arch = SouthernIslands
+ComputeUnit = 11
+SubUnit = VectorUnit
+Module = si-l1v-cu01
+
+[ Entry si-cu-12-vector ]
+Arch = SouthernIslands
+ComputeUnit = 12
+SubUnit = VectorUnit
+Module = si-l1v-cu01
+
+[ Entry si-cu-13-vector ]
+Arch = SouthernIslands
+ComputeUnit = 13
+SubUnit = VectorUnit
+Module = si-l1v-cu01
+
+[ Entry si-cu-14-vector ]
+Arch = SouthernIslands
+ComputeUnit = 14
+SubUnit = VectorUnit
+Module = si-l1v-cu01
+
+[ Entry si-cu-15-vector ]
+Arch = SouthernIslands
+ComputeUnit = 15
+SubUnit = VectorUnit
+Module = si-l1v-cu01
+
+[ Entry si-cu-16-vector ]
+Arch = SouthernIslands
+ComputeUnit = 16
+SubUnit = VectorUnit
+Module = si-l1v-cu02
+
+[ Entry si-cu-17-vector ]
+Arch = SouthernIslands
+ComputeUnit = 17
+SubUnit = VectorUnit
+Module = si-l1v-cu02
+
+[ Entry si-cu-18-vector ]
+Arch = SouthernIslands
+ComputeUnit = 18
+SubUnit = VectorUnit
+Module = si-l1v-cu02
+
+[ Entry si-cu-19-vector ]
+Arch = SouthernIslands
+ComputeUnit = 19
+SubUnit = VectorUnit
+Module = si-l1v-cu02
+
+[ Entry si-cu-20-vector ]
+Arch = SouthernIslands
+ComputeUnit = 20
+SubUnit = VectorUnit
+Module = si-l1v-cu02
+
+[ Entry si-cu-21-vector ]
+Arch = SouthernIslands
+ComputeUnit = 21
+SubUnit = VectorUnit
+Module = si-l1v-cu02
+
+[ Entry si-cu-22-vector ]
+Arch = SouthernIslands
+ComputeUnit = 22
+SubUnit = VectorUnit
+Module = si-l1v-cu02
+
+[ Entry si-cu-23-vector ]
+Arch = SouthernIslands
+ComputeUnit = 23
+SubUnit = VectorUnit
+Module = si-l1v-cu02
+
+[ Entry si-cu-24-vector ]
+Arch = SouthernIslands
+ComputeUnit = 24
+SubUnit = VectorUnit
+Module = si-l1v-cu03
+
+[ Entry si-cu-25-vector ]
+Arch = SouthernIslands
+ComputeUnit = 25
+SubUnit = VectorUnit
+Module = si-l1v-cu03
+
+[ Entry si-cu-26-vector ]
+Arch = SouthernIslands
+ComputeUnit = 26
+SubUnit = VectorUnit
+Module = si-l1v-cu03
+
+[ Entry si-cu-27-vector ]
+Arch = SouthernIslands
+ComputeUnit = 27
+SubUnit = VectorUnit
+Module = si-l1v-cu03
+
+[ Entry si-cu-28-vector ]
+Arch = SouthernIslands
+ComputeUnit = 28
+SubUnit = VectorUnit
+Module = si-l1v-cu03
+
+[ Entry si-cu-29-vector ]
+Arch = SouthernIslands
+ComputeUnit = 29
+SubUnit = VectorUnit
+Module = si-l1v-cu03
+
+[ Entry si-cu-30-vector ]
+Arch = SouthernIslands
+ComputeUnit = 30
+SubUnit = VectorUnit
+Module = si-l1v-cu03
+
+[ Entry si-cu-31-vector ]
+Arch = SouthernIslands
+ComputeUnit = 31
+SubUnit = VectorUnit
+Module = si-l1v-cu03
+
+[ Entry si-cu-00-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 0
+SubUnit = ScalarUnit
+Module = si-l1s-cu00
+
+[ Entry si-cu-01-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 1
+SubUnit = ScalarUnit
+Module = si-l1s-cu00
+
+[ Entry si-cu-02-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 2
+SubUnit = ScalarUnit
+Module = si-l1s-cu00
+
+[ Entry si-cu-03-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 3
+SubUnit = ScalarUnit
+Module = si-l1s-cu00
+
+[ Entry si-cu-04-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 4
+SubUnit = ScalarUnit
+Module = si-l1s-cu01
+
+[ Entry si-cu-05-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 5
+SubUnit = ScalarUnit
+Module = si-l1s-cu01
+
+[ Entry si-cu-06-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 6
+SubUnit = ScalarUnit
+Module = si-l1s-cu01
+
+[ Entry si-cu-07-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 7
+SubUnit = ScalarUnit
+Module = si-l1s-cu01
+
+[ Entry si-cu-08-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 8
+SubUnit = ScalarUnit
+Module = si-l1s-cu02
+
+[ Entry si-cu-09-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 9
+SubUnit = ScalarUnit
+Module = si-l1s-cu02
+
+[ Entry si-cu-10-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 10
+SubUnit = ScalarUnit
+Module = si-l1s-cu02
+
+[ Entry si-cu-11-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 11
+SubUnit = ScalarUnit
+Module = si-l1s-cu02
+
+[ Entry si-cu-12-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 12
+SubUnit = ScalarUnit
+Module = si-l1s-cu03
+
+[ Entry si-cu-13-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 13
+SubUnit = ScalarUnit
+Module = si-l1s-cu03
+
+[ Entry si-cu-14-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 14
+SubUnit = ScalarUnit
+Module = si-l1s-cu03
+
+[ Entry si-cu-15-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 15
+SubUnit = ScalarUnit
+Module = si-l1s-cu03
+
+[ Entry si-cu-16-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 16
+SubUnit = ScalarUnit
+Module = si-l1s-cu04
+
+[ Entry si-cu-17-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 17
+SubUnit = ScalarUnit
+Module = si-l1s-cu04
+
+[ Entry si-cu-18-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 18
+SubUnit = ScalarUnit
+Module = si-l1s-cu04
+
+[ Entry si-cu-19-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 19
+SubUnit = ScalarUnit
+Module = si-l1s-cu04
+
+[ Entry si-cu-20-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 20
+SubUnit = ScalarUnit
+Module = si-l1s-cu05
+
+[ Entry si-cu-21-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 21
+SubUnit = ScalarUnit
+Module = si-l1s-cu05
+
+[ Entry si-cu-22-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 22
+SubUnit = ScalarUnit
+Module = si-l1s-cu05
+
+[ Entry si-cu-23-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 23
+SubUnit = ScalarUnit
+Module = si-l1s-cu05
+
+[ Entry si-cu-24-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 24
+SubUnit = ScalarUnit
+Module = si-l1s-cu06
+
+[ Entry si-cu-25-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 25
+SubUnit = ScalarUnit
+Module = si-l1s-cu06
+
+[ Entry si-cu-26-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 26
+SubUnit = ScalarUnit
+Module = si-l1s-cu06
+
+[ Entry si-cu-27-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 27
+SubUnit = ScalarUnit
+Module = si-l1s-cu06
+
+[ Entry si-cu-28-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 28
+SubUnit = ScalarUnit
+Module = si-l1s-cu07
+
+[ Entry si-cu-29-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 29
+SubUnit = ScalarUnit
+Module = si-l1s-cu07
+
+[ Entry si-cu-30-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 30
+SubUnit = ScalarUnit
+Module = si-l1s-cu07
+
+[ Entry si-cu-31-scalar ]
+Arch = SouthernIslands
+ComputeUnit = 31
+SubUnit = ScalarUnit
+Module = si-l1s-cu07
