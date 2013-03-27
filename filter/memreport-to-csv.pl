@@ -52,16 +52,16 @@ while (my $line = <>) {
     $ignore = 1;
   }
 
-  if ($line =~ /^\[ si-l(\d+)-(\d+)(-(scalar|vector))?/) {
+  if ($line =~ /^\[ si(-(scalar|vector))?-l(\d+)-(\d+)/) {
     $ignore = 0;
     # L1
-    if($1 == "1") {
-      print "\nl" . $1 . "\t" . "$2" . "\t" . "$4" . "\t";
+    if($3 == "1") {
+      print "\nl" . $3 . "\t" . "$4" . "\t" . "$2" . "\t";
     }
 
     # L2
-    if($1 == "2") {
-      print "\nl" . $1 . "\t" . "$2" . "\t" . " " . "\t";
+    if($3 == "2") {
+      print "\nl" . $3 . "\t" . "$4" . "\t" . " " . "\t";
     }
   }
 
