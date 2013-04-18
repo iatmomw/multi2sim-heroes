@@ -1,8 +1,8 @@
 Index: src/m2s.c
 ===================================================================
---- src/m2s.c	(revision 1546)
+--- src/m2s.c	(revision 1585)
 +++ src/m2s.c	(working copy)
-@@ -392,7 +392,11 @@
+@@ -400,7 +400,11 @@
  	"      Functional (default) or detailed simulation for the AMD Southern Islands\n"
  	"      GPU model.\n"
  	"\n"
@@ -14,7 +14,7 @@ Index: src/m2s.c
  	"================================================================================\n"
  	"ARM CPU Options\n"
  	"================================================================================\n"
-@@ -1042,7 +1046,29 @@
+@@ -1058,7 +1062,29 @@
  			continue;
  		}
  
@@ -44,19 +44,12 @@ Index: src/m2s.c
  		/*
  		 * Fermi GPU Options
  		 */
+
 Index: src/arch/southern-islands/timing/gpu.c
 ===================================================================
---- src/arch/southern-islands/timing/gpu.c	(revision 1546)
+--- src/arch/southern-islands/timing/gpu.c	(revision 1585)
 +++ src/arch/southern-islands/timing/gpu.c	(working copy)
-@@ -21,6 +21,7 @@
- 
- #include <arch/common/arch.h>
- #include <arch/southern-islands/emu/ndrange.h>
-+#include <arch/southern-islands/emu/work-group.h>
- #include <lib/esim/esim.h>
- #include <lib/esim/trace.h>
- #include <lib/mhandle/mhandle.h>
-@@ -320,6 +321,16 @@
+@@ -323,6 +323,16 @@
  };
  enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
  
@@ -73,7 +66,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  /* Device parameters */
  int si_gpu_num_compute_units = 32;
  
-@@ -1318,6 +1329,10 @@
+@@ -1303,6 +1313,10 @@
  
  void si_gpu_dump_summary(FILE *f)
  {
@@ -84,34 +77,37 @@ Index: src/arch/southern-islands/timing/gpu.c
  }
  
  
-@@ -1370,9 +1385,31 @@
- 	while (si_gpu->compute_unit_ready_list_head && 
- 		ndrange->pending_list_head)
- 	{
+@@ -1338,9 +1352,34 @@
+ 
+ 		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
+ 
 -		si_compute_unit_map_work_group(
--			si_gpu->compute_unit_ready_list_head,
--			ndrange->pending_list_head);
+-			list_dequeue(si_gpu->available_compute_units),
+-			work_group);
 +		int preferredCU;
++		int available_index;
 +
 +		switch(si_gpu_workgroup_scheduling_policy) {
 +		case si_gpu_workgroup_scheduling_policy_userlocality:
-+			preferredCU = (ndrange->pending_list_head->id
++			preferredCU = (work_group_id 
 +				/ si_gpu->work_groups_per_compute_unit)
 +				% si_gpu_num_compute_units;
 +
-+			if(DOUBLE_LINKED_LIST_MEMBER(si_gpu, compute_unit_ready,
-+				si_gpu->compute_units[preferredCU])) {
-+					si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy]++;
-+					si_compute_unit_map_work_group(
-+						si_gpu->compute_units[preferredCU],
-+						ndrange->pending_list_head);
-+					break;
++			available_index = list_index_of(si_gpu->available_compute_units,
++				si_gpu->compute_units[preferredCU]);
++
++			if(available_index >= 0) {
++				si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_userlocality]++;
++				si_compute_unit_map_work_group(
++					list_remove_at(si_gpu->available_compute_units, available_index),
++					work_group);
++				break;
 +			} /* else { Fall through } */
 +		case si_gpu_workgroup_scheduling_policy_firstavailable:
-+			si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy]++;
++			si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_firstavailable]++;
 +			si_compute_unit_map_work_group(
-+				si_gpu->compute_unit_ready_list_head,
-+				ndrange->pending_list_head);
++				list_dequeue(si_gpu->available_compute_units),
++				work_group);
 +			break;
 +		default:
 +			fatal("Unknown scheduling policy %d", si_gpu_workgroup_scheduling_policy);
@@ -121,7 +117,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  	/* One more cycle */
 Index: src/arch/southern-islands/timing/gpu.h
 ===================================================================
---- src/arch/southern-islands/timing/gpu.h	(revision 1546)
+--- src/arch/southern-islands/timing/gpu.h	(revision 1585)
 +++ src/arch/southern-islands/timing/gpu.h	(working copy)
 @@ -106,6 +106,14 @@
  	si_gpu_register_alloc_work_group
