@@ -6,9 +6,9 @@ Index: src/m2s.c
  	"      Functional (default) or detailed simulation for the AMD Southern Islands\n"
  	"      GPU model.\n"
  	"\n"
-+	"  --si-workgroup-scheduling-policy (FirstAvailable, UserLocality)\n"
-+	"      FirstAvailable (default) or UserLocality workgroup scheduling policy\n"
-+	"      for the AMD Southern Islands GPU model.\n"
++	"  --si-workgroup-scheduling-policy (FirstAvailable, UserLocality, BorrowLocality)\n"
++	"      FirstAvailable (default), UserLocality, or BorrowLocality workgroup\n"
++	"      scheduling policy for the AMD Southern Islands GPU model.\n"
  	"\n"
 +	"\n"
  	"================================================================================\n"
@@ -26,9 +26,9 @@ Index: src/m2s.c
 +			argi++;
 +			for(ctr = 0; ctr < si_gpu_workgroup_scheduling_policy_number; ctr++) {
 +				if(!strcasecmp(argv[argi], si_gpu_workgroup_scheduling_policy_map.map[ctr].string)) {
-+					si_gpu_workgroup_scheduling_policy = 
-+						str_map_string_case(&si_gpu_workgroup_scheduling_policy_map, 
-+                					argv[argi]);
++					si_gpu_workgroup_scheduling_policy =
++						str_map_string_case(&si_gpu_workgroup_scheduling_policy_map,
++							argv[argi]);
 +					break;
 +				}
 +			}
@@ -44,29 +44,29 @@ Index: src/m2s.c
  		/*
  		 * Fermi GPU Options
  		 */
-
 Index: src/arch/southern-islands/timing/gpu.c
 ===================================================================
 --- src/arch/southern-islands/timing/gpu.c	(revision 1585)
 +++ src/arch/southern-islands/timing/gpu.c	(working copy)
-@@ -323,6 +323,16 @@
+@@ -323,6 +323,17 @@
  };
  enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
  
 +struct str_map_t si_gpu_workgroup_scheduling_policy_map =
 +{
-+	2, {
++	3, {
 +		{ "FirstAvailable", si_gpu_workgroup_scheduling_policy_firstavailable },
-+		{ "UserLocality"  , si_gpu_workgroup_scheduling_policy_userlocality }
++		{ "UserLocality"  , si_gpu_workgroup_scheduling_policy_userlocality },
++		{ "BorrowLocality", si_gpu_workgroup_scheduling_policy_borrowlocality }
 +	} 
 +};
-+static long long si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_number] = {0, 0};
++static long long si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_number] = {0, 0, 0};
 +enum si_gpu_workgroup_scheduling_policy_t si_gpu_workgroup_scheduling_policy;
 +
  /* Device parameters */
  int si_gpu_num_compute_units = 32;
  
-@@ -1303,6 +1313,10 @@
+@@ -1303,6 +1314,10 @@
  
  void si_gpu_dump_summary(FILE *f)
  {
@@ -77,34 +77,57 @@ Index: src/arch/southern-islands/timing/gpu.c
  }
  
  
-@@ -1338,9 +1352,34 @@
+@@ -1317,6 +1332,8 @@
+ 	struct si_work_group_t *work_group;
  
- 		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
+ 	int compute_unit_id;
++	int preferred_compute_unit_id;
++	int available_compute_unit_index;
+ 
+ 	long work_group_id;
+ 
+@@ -1333,14 +1350,45 @@
+ 	while (list_count(si_gpu->available_compute_units) && 
+ 		list_count(si_emu->waiting_work_groups))
+ 	{
+-		work_group_id = (long)list_dequeue(si_emu->waiting_work_groups);
+-		work_group = si_work_group_create(work_group_id, ndrange);
++		switch(si_gpu_workgroup_scheduling_policy) {
++		case si_gpu_workgroup_scheduling_policy_borrowlocality:
++			/* Fall through */
++		case si_gpu_workgroup_scheduling_policy_userlocality:
++			work_group_id = (long)list_head(si_emu->waiting_work_groups);
+ 
+-		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
++			preferred_compute_unit_id = (work_group_id
++				/ si_gpu->work_groups_per_compute_unit)
++				% si_gpu_num_compute_units;
  
 -		si_compute_unit_map_work_group(
 -			list_dequeue(si_gpu->available_compute_units),
 -			work_group);
-+		int preferredCU;
-+		int available_index;
++			available_compute_unit_index = list_index_of(si_gpu->available_compute_units,
++				si_gpu->compute_units[preferred_compute_unit_id]);
 +
-+		switch(si_gpu_workgroup_scheduling_policy) {
-+		case si_gpu_workgroup_scheduling_policy_userlocality:
-+			preferredCU = (work_group_id 
-+				/ si_gpu->work_groups_per_compute_unit)
-+				% si_gpu_num_compute_units;
-+
-+			available_index = list_index_of(si_gpu->available_compute_units,
-+				si_gpu->compute_units[preferredCU]);
-+
-+			if(available_index >= 0) {
++			if(available_compute_unit_index >= 0) {
 +				si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_userlocality]++;
++				list_dequeue(si_emu->waiting_work_groups);
++				work_group = si_work_group_create(work_group_id, ndrange);
++
++				list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
++
 +				si_compute_unit_map_work_group(
-+					list_remove_at(si_gpu->available_compute_units, available_index),
++					list_remove_at(si_gpu->available_compute_units, available_compute_unit_index),
 +					work_group);
 +				break;
 +			} /* else { Fall through } */
 +		case si_gpu_workgroup_scheduling_policy_firstavailable:
 +			si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_firstavailable]++;
++			work_group_id = (long)list_dequeue(si_emu->waiting_work_groups);
++			work_group = si_work_group_create(work_group_id, ndrange);
++
++			list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
++
 +			si_compute_unit_map_work_group(
 +				list_dequeue(si_gpu->available_compute_units),
 +				work_group);
@@ -119,7 +142,7 @@ Index: src/arch/southern-islands/timing/gpu.h
 ===================================================================
 --- src/arch/southern-islands/timing/gpu.h	(revision 1585)
 +++ src/arch/southern-islands/timing/gpu.h	(working copy)
-@@ -106,6 +106,14 @@
+@@ -106,6 +106,15 @@
  	si_gpu_register_alloc_work_group
  } si_gpu_register_alloc_granularity;
  
@@ -128,6 +151,7 @@ Index: src/arch/southern-islands/timing/gpu.h
 +{
 +	si_gpu_workgroup_scheduling_policy_firstavailable = 0,
 +	si_gpu_workgroup_scheduling_policy_userlocality,
++	si_gpu_workgroup_scheduling_policy_borrowlocality,
 +	si_gpu_workgroup_scheduling_policy_number
 +} si_gpu_workgroup_scheduling_policy;
 +
