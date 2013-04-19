@@ -67,7 +67,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  /* Device parameters */
  int si_gpu_num_compute_units = 32;
  
-@@ -1303,6 +1314,10 @@
+@@ -1303,9 +1314,38 @@
  
  void si_gpu_dump_summary(FILE *f)
  {
@@ -77,21 +77,49 @@ Index: src/arch/southern-islands/timing/gpu.c
 +	}
  }
  
++int list_bestPositiveValue(struct list_t* list, int target, int penalty) {
++	int currentIndex;
++	int currentValue;
++	int bestIndex = 0;
++	int bestValue = (int)list_head(list);
  
-@@ -1317,8 +1332,12 @@
++	if(bestValue < target) {
++		bestValue += penalty;
++	}
++
++	for(currentIndex = 0; currentIndex < list_count(list); currentIndex++) {
++		currentValue = (int)list_get(list, currentIndex);
++
++		if(currentValue < target) {
++			currentValue += penalty;
++		}
++
++		if(currentValue - target < bestValue - target) {
++			bestValue = currentValue;
++			bestIndex = currentIndex;
++		}
++	}
++
++	return bestIndex;
++}
++
+ /* Run one iteration of timing simulation. Return values are:
+  *   - arch_sim_kind_invalid - no more simulation
+  *   - arch_sim_kind_detailed - still simulating */
+@@ -1317,8 +1357,12 @@
  	struct si_work_group_t *work_group;
  
  	int compute_unit_id;
++	int compute_unit_id_index;
 +	int preferred_compute_unit_id;
-+	int available_compute_unit_index;
  
  	long work_group_id;
-+	int work_group_id_index;
++	long work_group_id_index;
 +	long preferred_work_group_id;
  
  	/* For efficiency when no Southern Islands emulation is selected, 
  	 * exit here if the list of existing ND-Ranges is empty. */
-@@ -1333,14 +1352,86 @@
+@@ -1333,14 +1377,63 @@
  	while (list_count(si_gpu->available_compute_units) && 
  		list_count(si_emu->waiting_work_groups))
  	{
@@ -110,33 +138,9 @@ Index: src/arch/southern-islands/timing/gpu.c
 +			preferred_work_group_id = ((ndrange->group_count + si_gpu_num_compute_units - 1) 
 +				/ si_gpu_num_compute_units) * compute_unit_id;
 +
-+			/* Closest value with penalty for lesser values */
-+			int currentIndex;
-+			int currentValue;
-+			int bestIndex = 0;
-+			int bestValue = (int)list_head(si_emu->waiting_work_groups);
++			work_group_id_index = (long)list_bestPositiveValue(si_emu->waiting_work_groups, preferred_work_group_id, ndrange->group_count);
 +
-+			if(bestValue < preferred_work_group_id) {
-+				bestValue += ndrange->group_count;
-+			}
-+
-+			for(currentIndex = 0; currentIndex < list_count(si_emu->waiting_work_groups); currentIndex++) {
-+				currentValue = (int)list_get(si_emu->waiting_work_groups, currentIndex);
-+				
-+				if(currentValue < preferred_work_group_id) {
-+					currentValue += ndrange->group_count;
-+				}
-+
-+				if(currentValue - preferred_work_group_id < bestValue - preferred_work_group_id) {
-+					bestValue = currentValue;
-+					bestIndex = currentIndex;
-+				}
-+			}
-+
-+			work_group_id = bestValue;
-+			work_group_id_index = bestIndex;
-+
-+			list_remove_at(si_emu->waiting_work_groups, work_group_id_index);
++			work_group_id = (long)list_remove_at(si_emu->waiting_work_groups, work_group_id_index);
 +			work_group = si_work_group_create(work_group_id, ndrange);
 +
 +			list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
@@ -152,10 +156,10 @@ Index: src/arch/southern-islands/timing/gpu.c
 +				/ si_gpu->work_groups_per_compute_unit)
 +				% si_gpu_num_compute_units;
 +
-+			available_compute_unit_index = list_index_of(si_gpu->available_compute_units,
++			compute_unit_id_index = list_index_of(si_gpu->available_compute_units,
 +				si_gpu->compute_units[preferred_compute_unit_id]);
 +
-+			if(available_compute_unit_index >= 0) {
++			if(compute_unit_id_index >= 0) {
 +				si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_userlocality]++;
 +				list_dequeue(si_emu->waiting_work_groups);
 +				work_group = si_work_group_create(work_group_id, ndrange);
@@ -163,12 +167,13 @@ Index: src/arch/southern-islands/timing/gpu.c
 +				list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
 +
 +				si_compute_unit_map_work_group(
-+					list_remove_at(si_gpu->available_compute_units, available_compute_unit_index),
++					list_remove_at(si_gpu->available_compute_units, compute_unit_id_index),
 +					work_group);
 +				break;
 +			} /* else { Fall through } */
 +		case si_gpu_workgroup_scheduling_policy_firstavailable:
 +			si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_firstavailable]++;
++
 +			work_group_id = (long)list_dequeue(si_emu->waiting_work_groups);
 +			work_group = si_work_group_create(work_group_id, ndrange);
 +
