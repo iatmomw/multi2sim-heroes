@@ -84,14 +84,14 @@ Index: src/arch/southern-islands/timing/gpu.c
 +	int bestValue = (int)list_head(list);
  
 +	if(bestValue < target) {
-+		bestValue += penalty;
++		bestValue =  target - bestValue + penalty;
 +	}
 +
 +	for(currentIndex = 0; currentIndex < list_count(list); currentIndex++) {
 +		currentValue = (int)list_get(list, currentIndex);
 +
 +		if(currentValue < target) {
-+			currentValue += penalty;
++			currentValue = target - currentValue + penalty;
 +		}
 +
 +		if(currentValue - target < bestValue - target) {
