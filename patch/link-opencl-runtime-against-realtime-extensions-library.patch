@@ -1,0 +1,13 @@
+Index: runtime/opencl/Makefile.am
+===================================================================
+--- runtime/opencl/Makefile.am	(revision 1680)
++++ runtime/opencl/Makefile.am	(working copy)
+@@ -2,7 +2,7 @@
+ 
+ lib_LTLIBRARIES = $(top_builddir)/lib/libm2s-opencl.la
+ 
+-__top_builddir__lib_libm2s_opencl_la_LDFLAGS = -version-info 1:0:0 -lpthread -ldl
++__top_builddir__lib_libm2s_opencl_la_LDFLAGS = -version-info 1:0:0 -lpthread -ldl -lrt
+ 
+ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
+ 	\
