@@ -120,7 +120,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  	
  	/* For efficiency when no Southern Islands emulation is selected, 
  	 * exit here if the list of existing ND-Ranges is empty. */
-@ -1305,17 +1305,64 @@
+@@ -1305,17 +1305,64 @@
  	while (list_count(si_gpu->available_compute_units) && 
  		list_count(si_emu->waiting_work_groups))
  	{
