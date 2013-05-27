@@ -67,7 +67,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  /* Device parameters */
  int si_gpu_num_compute_units = 32;
  
-@@ -1278,9 +1278,39 @@
+@@ -1278,19 +1289,67 @@
  
  void si_gpu_dump_summary(FILE *f)
  {
@@ -77,38 +77,54 @@ Index: src/arch/southern-islands/timing/gpu.c
 +	}
  }
  
++/**
++ * This function returns the closest positive value (CPV) to target given penalty.
++ * A positive value (PV) is defined as a value that is greater than or equal to target.
++ * Values that are not PV's for target are weighted by adding a penalty.
++ * The CPV of target is the minimum element in the union of PV's and weighted non-PV's.
++ *
++ * @param	list	a list of integers to search
++ * @param	target	a value to find the CPV to
++ * @param	penalty	a value to add to list elements that are not PV's
++ * @return		the CPV to target in list
++ */
 +int list_bestPositiveValue(struct list_t* list, int target, int penalty) {
 +	int currentIndex;
 +	int currentValue;
 +	int bestIndex = 0;
-+	int bestValue = (int)list_head(list);
++	int bestValue = *((int *)list_head(list));
  
++	/* Apply penalty to non-PV's */
 +	if(bestValue < target) {
 +		bestValue =  target - bestValue + penalty;
 +	}
 +
++	/* Search the list for the CPV */
 +	for(currentIndex = 0; currentIndex < list_count(list); currentIndex++) {
-+		currentValue = (int)list_get(list, currentIndex);
++		currentValue = *((int *)list_get(list, currentIndex));
 +
++		/* Apply penalty to non-PV's */
 +		if(currentValue < target) {
 +			currentValue = target - currentValue + penalty;
 +		}
 +
++		/* If this value is less than the previous best value, remember it */
 +		if(currentValue - target < bestValue - target) {
 +			bestValue = currentValue;
 +			bestIndex = currentIndex;
 +		}
 +	}
 +
++	/* Return the index of the CPV */
 +	return bestIndex;
 +}
-+
 +
  /* Run one iteration of timing simulation. Return TRUE if still running. */
  int si_gpu_run(void)
  {
-@@ -1289,8 +1330,12 @@
- 	struct si_work_group_t *work_group;
+ 	struct si_compute_unit_t *compute_unit;
+ 	struct si_ndrange_t *ndrange;
+-	struct si_work_group_t *work_group;
  
  	int compute_unit_id;
 +	int compute_unit_id_index;
@@ -120,76 +136,95 @@ Index: src/arch/southern-islands/timing/gpu.c
  	
  	/* For efficiency when no Southern Islands emulation is selected, 
  	 * exit here if the list of existing ND-Ranges is empty. */
-@@ -1305,17 +1305,64 @@
+@@ -1305,17 +1364,84 @@
  	while (list_count(si_gpu->available_compute_units) && 
  		list_count(si_emu->waiting_work_groups))
  	{
 -		work_group_id = (long) list_dequeue(
 -			si_emu->waiting_work_groups);
-+		switch(si_gpu_workgroup_scheduling_policy) {
-+		case si_gpu_workgroup_scheduling_policy_borrowlocality:
-+			si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_borrowlocality]++;
++		/* Default policy ids */
++		work_group_id = (long) list_head(si_emu->waiting_work_groups);
++		compute_unit_id = ((struct si_compute_unit_t*) list_head(si_gpu->available_compute_units))->id;
  
 -		work_group = si_work_group_create(work_group_id, ndrange);
++		/* Default policy indexes */
++		work_group_id_index = 0;
++		compute_unit_id_index = 0;
  
 -		list_enqueue(si_emu->running_work_groups, 
 -			(void *)work_group_id);
-+			compute_unit_id = ((struct si_compute_unit_t*) list_head(si_gpu->available_compute_units))->id;
++		switch(si_gpu_workgroup_scheduling_policy) {
++		/* Pick the first available compute unit and pair it with the "best" workgroup that is currently available.
++		 * The "best" workgroup is defined in the following way:
++		 * 	Logically divide all workgroups among all compute units. For example, if there are 10 workgroups and
++		 * 	4 compute units then the division should be:
++		 *		CU-0 => {WG-0, WG-1, WG-2}
++		 *		CU-1 => {WG-3, WG-4, WG-5}
++		 * 		CU-2 => {WG-6, WG-7, WG-8}
++		 *		CU-3 => {WG-9}
++		 *	
++		 *	Define the lower-bound of a compute unit as its lowest-numbered workgroup. In the example above, the 
++		 * 	lower-bound of CU-2 is WG-6.
++		 *
++		 * 	The "best" workgroup for CU-X is defined then as:
++		 *		The waiting workgroup with the smallest workgroup id that is not less than the lower-bound of CU-X, or
++		 * 		if such a workgroup does't exist, the waiting workgroup with largest id that is less than the lower-bound of CU-X.
++		 *
++		 *	This policy aims to favor clustering consecutive workgroup assignments to compute units while also borrowing workgroups
++		 *	from other compute units if necessary.
++		 */
++		case si_gpu_workgroup_scheduling_policy_borrowlocality:
++			si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_borrowlocality]++;
  
--		si_compute_unit_map_work_group(
--			list_dequeue(si_gpu->available_compute_units),
--			work_group);
 +			preferred_work_group_id = ((ndrange->group_count + si_gpu_num_compute_units - 1) 
 +				/ si_gpu_num_compute_units) * compute_unit_id;
 +
 +			work_group_id_index = (long)list_bestPositiveValue(si_emu->waiting_work_groups, preferred_work_group_id, ndrange->group_count);
 +
-+			work_group_id = (long)list_remove_at(si_emu->waiting_work_groups, work_group_id_index);
-+			work_group = si_work_group_create(work_group_id, ndrange);
-+
-+			list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
-+
-+			si_compute_unit_map_work_group(
-+				list_dequeue(si_gpu->available_compute_units),
-+				work_group);
 +			break;
++		/* Pick the first waiting workgroup and try to force it onto the "best" compute unit even unavailable compute units.
++		 * If the compute unit is not available, use a different policy */
 +		case si_gpu_workgroup_scheduling_policy_userlocality:
-+			work_group_id = (long)list_head(si_emu->waiting_work_groups);
-+
++			/* Definition of "best" compute unit */
 +			preferred_compute_unit_id = (work_group_id
 +				/ si_gpu->work_groups_per_compute_unit)
 +				% si_gpu_num_compute_units;
 +
++			/* Find the index of the preferred compute unit in the available list. This should be -1 if its not in the list */
 +			compute_unit_id_index = list_index_of(si_gpu->available_compute_units,
 +				si_gpu->compute_units[preferred_compute_unit_id]);
 +
++			/* Check that the preferred compute unit was available */
 +			if(compute_unit_id_index >= 0) {
 +				si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_userlocality]++;
-+				list_dequeue(si_emu->waiting_work_groups);
-+				work_group = si_work_group_create(work_group_id, ndrange);
 +
-+				list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
-+
-+				si_compute_unit_map_work_group(
-+					list_remove_at(si_gpu->available_compute_units, compute_unit_id_index),
-+					work_group);
 +				break;
-+			} /* else { Fall through } */
++			} else {
++				/* Return modified indices to default */
++				compute_unit_id_index = 0;
++
++				/* Fall through to next policy */
++			}
++		/* Match the first available compute unit with the first waiting workgroup */
 +		case si_gpu_workgroup_scheduling_policy_firstavailable:
 +			si_gpu_workgroup_scheduling_policy_ctr[si_gpu_workgroup_scheduling_policy_firstavailable]++;
 +
-+			work_group_id = (long)list_dequeue(si_emu->waiting_work_groups);
-+			work_group = si_work_group_create(work_group_id, ndrange);
-+
-+			list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
-+
-+			si_compute_unit_map_work_group(
-+				list_dequeue(si_gpu->available_compute_units),
-+				work_group);
 +			break;
 +		default:
 +			fatal("Unknown scheduling policy %d", si_gpu_workgroup_scheduling_policy);
 +		}
++
++		/* Move the chosen workgroup from the waiting list to the running list */
++		work_group_id = (long)list_remove_at(si_emu->waiting_work_groups, work_group_id_index);
++		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
++
++		/* Pair the chosen workgroup and compute unit.
++		 * The first argument also removes the compute unit from the available list. */
+ 		si_compute_unit_map_work_group(
+-			list_dequeue(si_gpu->available_compute_units),
+-			work_group);
++			list_remove_at(si_gpu->available_compute_units, compute_unit_id_index),
++			si_work_group_create(work_group_id, ndrange));
  	}
  
  	/* One more cycle */
