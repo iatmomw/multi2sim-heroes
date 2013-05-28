@@ -92,7 +92,7 @@ Index: src/arch/southern-islands/timing/gpu.c
 +	int currentIndex;
 +	int currentValue;
 +	int bestIndex = 0;
-+	int bestValue = *((int *)list_head(list));
++	long bestValue = (long) list_head(list);
  
 +	/* Apply penalty to non-PV's */
 +	if(bestValue < target) {
@@ -101,7 +101,7 @@ Index: src/arch/southern-islands/timing/gpu.c
 +
 +	/* Search the list for the CPV */
 +	for(currentIndex = 0; currentIndex < list_count(list); currentIndex++) {
-+		currentValue = *((int *)list_get(list, currentIndex));
++		currentValue = (long) list_get(list, currentIndex);
 +
 +		/* Apply penalty to non-PV's */
 +		if(currentValue < target) {
@@ -136,7 +136,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  	
  	/* For efficiency when no Southern Islands emulation is selected, 
  	 * exit here if the list of existing ND-Ranges is empty. */
-@@ -1305,17 +1364,84 @@
+@@ -1305,17 +1364,87 @@
  	while (list_count(si_gpu->available_compute_units) && 
  		list_count(si_emu->waiting_work_groups))
  	{
@@ -217,6 +217,9 @@ Index: src/arch/southern-islands/timing/gpu.c
 +		/* Move the chosen workgroup from the waiting list to the running list */
 +		work_group_id = (long)list_remove_at(si_emu->waiting_work_groups, work_group_id_index);
 +		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
++
++		/* FIXME */
++		warning("Mapping workgroup %ld to compute unit %d", work_group_id, ((struct si_compute_unit_t *) list_get(si_gpu->available_compute_units, compute_unit_id_index))->id);
 +
 +		/* Pair the chosen workgroup and compute unit.
 +		 * The first argument also removes the compute unit from the available list. */
