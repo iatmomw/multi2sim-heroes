@@ -1,3 +1,12 @@
+Full simulation traces generate very large files. This patch eliminates all
+non-memory related information from simulation traces. Eliminating this extra
+information from traces simplifies studying memory and coherence and saves
+disk space.
+
+Author: William Panlener
+Category: research
+Last-Verified: r1792
+---
 Index: src/mem-system/mem-system.h
 ===================================================================
 --- src/mem-system/mem-system.h	(revision 1290)
