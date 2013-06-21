@@ -34,6 +34,24 @@ while (my $line = <>) {
 }
 
 print " \tAccesses\tHits\tRatio\n";
-print "Scalar\t" . $scalar_accesses . "\t" . $scalar_hits . "\t" . $scalar_hits / $scalar_accesses . "\n";
-print "Vector\t" . $vector_accesses . "\t" . $vector_hits . "\t" . $vector_hits / $vector_accesses . "\n";
-print "L2\t" . $l2_accesses . "\t" . $l2_hits . "\t" . $l2_hits / $l2_accesses . "\n";
+
+print "Scalar\t" . $scalar_accesses . "\t" . $scalar_hits . "\t";
+if($scalar_accesses != 0) {
+  print $scalar_hits / $scalar_accesses . "\n";
+} else {
+  print "%%\n";
+}
+
+print "Vector\t" . $vector_accesses . "\t" . $vector_hits . "\t";
+if($vector_accesses != 0) {
+  print $vector_hits / $vector_accesses . "\n";
+} else {
+  print "%%\n";
+}
+
+print "L2\t" . $l2_accesses . "\t" . $l2_hits . "\t";
+if($l2_accesses != 0) {
+  print $l2_hits / $l2_accesses . "\n";
+} else {
+  print "%%\n";
+}
