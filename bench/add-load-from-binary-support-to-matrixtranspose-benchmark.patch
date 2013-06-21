@@ -1,0 +1,57 @@
+--- a/samples/opencl/cl/app/MatrixTranspose/MatrixTranspose.cpp	2011-07-18 11:09:23.000000000 -0700
++++ b/samples/opencl/cl/app/MatrixTranspose/MatrixTranspose.cpp	2013-06-21 11:31:19.686839025 -0700
+@@ -719,21 +719,42 @@
+ 
+     /* create a CL program using the kernel source */
+     streamsdk::SDKFile kernelFile;
++
++    /* Get path of current executable */
+     std::string kernelPath = sampleCommon->getPath();
+-    kernelPath.append("MatrixTranspose_Kernels.cl");
+-    if(!kernelFile.open(kernelPath.c_str()))
++    if(isLoadBinaryEnabled())
+     {
+-        std::cout << "Failed to load kernel file : " << kernelPath << std::endl;
+-        return SDK_FAILURE;
++        kernelPath.append(loadBinary.c_str());
++        if(!kernelFile.readBinaryFromFile(kernelPath.c_str()))
++        {
++            std::cout << "Failed to load kernel file : " << kernelPath << std::endl;
++            return SDK_FAILURE;
++        }
++
++        const char * binary = kernelFile.source().c_str();
++        size_t binarySize = kernelFile.source().size();
++        program = clCreateProgramWithBinary(context,
++                                            1,
++                                            &devices[deviceId],
++                                            (const size_t*)&binarySize,
++                                            (const unsigned char**)&binary,
++                                            NULL,
++                                            &status);
++    } else {
++        kernelPath.append("MatrixTranspose_Kernels.cl");
++        if(!kernelFile.open(kernelPath.c_str()))
++        {
++            std::cout << "Failed to load kernel file : " << kernelPath << std::endl;
++            return SDK_FAILURE;
++        }
++        const char * source = kernelFile.source().c_str();
++        size_t sourceSize[] = { strlen(source) };
++        program = clCreateProgramWithSource(context,
++                                            1,
++                                            &source,
++                                            sourceSize,
++                                            &status);
+     }
+-    const char * source = kernelFile.source().c_str();
+-    size_t sourceSize[] = { strlen(source) };
+-    program = clCreateProgramWithSource(
+-        context,
+-        1,
+-        &source,
+-        sourceSize,
+-        &status);
+     if(!sampleCommon->checkVal(
+             status,
+             CL_SUCCESS,
