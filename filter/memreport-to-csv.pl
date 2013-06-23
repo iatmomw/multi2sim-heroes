@@ -116,7 +116,7 @@ sub experiment__cache_hitmiss {
 }
 
 ## Test 1: No whitelist
-&memreport_full();
+#&memreport_full();
 
 ## Test 2: Whitelist both blocks and data
 &experiment__cache_hitmiss();
