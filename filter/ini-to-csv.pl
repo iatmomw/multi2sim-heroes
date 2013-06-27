@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use lib "./";
+use lib "$ARGV[0]";
 
 use csv_column_headers qw( memreport_column_headers);
 
