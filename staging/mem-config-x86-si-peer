@@ -1,0 +1,49 @@
+[ CacheGeometry geo-l1 ]
+Sets = 64
+Assoc = 4
+BlockSize = 64
+Latency = 1
+
+[ Module si-mm ]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-si-l1-to-mm-all
+
+[ Module x86-mm ]
+Type = MainMemory
+BlockSize = 64
+Latency = 100
+HighNetwork = net-l1-all-to-x86-mm
+
+[ Module si-l1 ]
+Type = Cache
+Geometry = geo-l1
+LowNetwork = net-si-l1-to-mm-all
+LowModules = si-mm x86-mm
+
+[ Module x86-l1 ]
+Type = Cache
+Geometry = geo-l1
+LowNetwork = net-l1-all-to-x86-mm
+LowModules = x86-mm
+
+[ Network net-si-l1-to-mm-all ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[ Network net-l1-all-to-x86-mm ]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[ Entry si-cu-0 ]
+Arch = SouthernIslands
+ComputeUnit = 0
+DataModule = si-l1
+
+[ Entry x86-core-0 ]
+Arch = x86
+Core = 0
+DataModule = x86-l1
