@@ -15,8 +15,9 @@ set palette negative
 # zrange
 set cbrange [0:10]
 
-set xrange [0:6]
-set yrange [0:6]
+set autoscale xy
+
+unset ytics
 
 set view map
 
