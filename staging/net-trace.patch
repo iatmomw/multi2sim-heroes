@@ -1,0 +1,126 @@
+Index: configure.ac
+===================================================================
+--- configure.ac	(revision 1834)
++++ configure.ac	(working copy)
+@@ -717,7 +717,7 @@
+ 		
+ 		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
+ 		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
+-		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
++		saved_flags="-msse2 -Wall -DMHANDLE -g -O0 -std=gnu99"
+ 		CFLAGS="-Wno-error=deprecated-declarations"
+ 		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
+ 		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+Index: src/lib/esim/trace.c
+===================================================================
+--- src/lib/esim/trace.c	(revision 1834)
++++ src/lib/esim/trace.c	(working copy)
+@@ -147,9 +147,15 @@
+ 	/* Dump current cycle */
+ 	if (cycle > trace_last_cycle && print_cycle)
+ 	{
+-		gzprintf(trace_file, "c clk=%lld\n", cycle);
++		if(trace_last_cycle == -1) {
++			gzprintf(trace_file, "clk=%lld: ", cycle);
++		} else {
++			gzprintf(trace_file, "\nclk=%lld: ", cycle);
++		}
+ 		trace_last_cycle = cycle;
+-	}
++	} else {
++		gzprintf(trace_file, ", ");
++        }
+ 
+ 	/* Dump message */
+ 	gzwrite(trace_file, buf, len);
+Index: src/lib/esim/trace.h
+===================================================================
+--- src/lib/esim/trace.h	(revision 1834)
++++ src/lib/esim/trace.h	(working copy)
+@@ -25,12 +25,15 @@
+ 
+ int trace_new_category(void);
+ 
+-#define trace_status(category) ((category) ? __trace_status((category)) : 0)
++#define trace_status(category) 0
++#define custom_trace_status(category) ((category) ? __trace_status((category)) : 0)
+ int __trace_status(int category);
+ 
+-#define trace(category, ...) ((category) ? \
++#define trace(category, ...) (void) 0
++#define custom_trace(category, ...) ((category) ? \
+ 	__trace((category), 1, __VA_ARGS__) : (void) 0)
+-#define trace_header(category, ...) ((category) ? \
++#define trace_header(category, ...) (void) 0
++#define custom_trace_header(category, ...) ((category) ? \
+ 	__trace((category), 0, __VA_ARGS__) : (void) 0)
+ void __trace(int category, int print_cycle, char *fmt, ...)
+ 	__attribute__ ((format (printf, 3, 4)));
+Index: src/network/net-system.c
+===================================================================
+--- src/network/net-system.c	(revision 1834)
++++ src/network/net-system.c	(working copy)
+@@ -20,6 +20,7 @@
+ #include <math.h>
+ 
+ #include <lib/esim/esim.h>
++#include <lib/esim/trace.h>
+ #include <lib/mhandle/mhandle.h>
+ #include <lib/util/debug.h>
+ #include <lib/util/file.h>
+@@ -39,6 +40,7 @@
+  */
+ 
+ int net_debug_category;
++int net_trace_category;
+ 
+ char *net_config_help =
+ 	"The network configuration file is a plain-text file following the\n"
+@@ -302,6 +304,8 @@
+ 
+ void net_init(void)
+ {
++	net_trace_category = trace_new_category();
++
+ 	/* Load network configuration file */
+ 	net_read_config();
+ 
+Index: src/network/net-system.h
+===================================================================
+--- src/network/net-system.h	(revision 1834)
++++ src/network/net-system.h	(working copy)
+@@ -20,6 +20,8 @@
+ #ifndef NETWORK_NET_SYSTEM_H
+ #define NETWORK_NET_SYSTEM_H
+ 
++#include <lib/esim/trace.h>
++
+ /* Help message */
+ extern char *net_config_help;
+ 
+@@ -38,6 +40,12 @@
+ #define net_debug(...) debug(net_debug_category, __VA_ARGS__)
+ extern int net_debug_category;
+ 
++/* Trace */
++#define net_tracing() trace_status(net_trace_category)
++#define net_trace(...) custom_trace(net_trace_category, __VA_ARGS__)
++#define net_trace_header(...) trace_header(net_trace_category, __VA_ARGS__)
++extern int net_trace_category;
++
+ /* Configuration parameters */
+ extern char *net_config_file_name;
+ extern char *net_report_file_name;
+Index: src/network/network.c
+===================================================================
+--- src/network/network.c	(revision 1834)
++++ src/network/network.c	(working copy)
+@@ -1117,6 +1117,8 @@
+ 		fatal("%s: not end nodes.\n%s", __FUNCTION__,
+ 				net_err_end_nodes);
+ 
++	net_trace("%s", net->name);
++
+ 	/* Create message */
+ 	msg = net_msg_create(net, src_node, dst_node, size);
+ 
