@@ -10,7 +10,7 @@ function add_network {
 rm $MATRIX;
 
 add_network "si-net-l2-0-gm-0"; 
-add_network "perl si-net-l2-1-gm-1";
+add_network "si-net-l2-1-gm-1";
 add_network "si-net-l2-2-gm-2";
 add_network "si-net-l2-3-gm-3";
 add_network "si-net-l2-4-gm-4";
