@@ -1,0 +1,21 @@
+Index: src/arch/southern-islands/emu/emu.c
+===================================================================
+--- src/arch/southern-islands/emu/emu.c	(revision 2055)
++++ src/arch/southern-islands/emu/emu.c	(working copy)
+@@ -19,6 +19,7 @@
+ 
+ 
+ #include <arch/x86/emu/emu.h>
++#include <arch/x86/emu/context.h>
+ #include <driver/opencl/opencl.h>
+ #include <lib/mhandle/mhandle.h>
+ #include <lib/util/debug.h>
+@@ -46,7 +47,7 @@
+ 	EmuCreate(asEmu(self), "SouthernIslands");
+ 
+ 	/* Initialize */
+-	self->video_mem = mem_create();
++	self->video_mem = x86_emu->context_list_head->mem;
+ 	self->video_mem->safe = 0;
+ 	self->video_mem_top = 0;
+ 	self->waiting_work_groups = list_create();

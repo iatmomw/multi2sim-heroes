@@ -1,0 +1,125 @@
+Property functions comprise a class of OpenCL API that provide the
+specifications and abilities of a device to a program. If having knowledge of
+any given property of a device would significantly impact decisions made by a
+program, then this property should be represented in OpenCL property
+functions. TUM will have such an impact.
+
+An example of a function in this class is clGetDeviceInfo[1].
+
+Currently, UM may be tested for by passing the CL_DEVICE_HOST_UNIFIED_MEMORY
+parameter to clGetDeviceInfo[1], but no such test exists in the OpenCL
+standard for TUM. To allow for this test, I have added a new parameter to
+clGetDeviceInfo[1] called "CL_DEVICE_EXT_TUM" that always returns CL_TRUE.
+This can be handled better by modifying the device property list that would
+exist in a real driver to only return CL_TRUE for devices that truly support
+this feature.
+---
+Index: src/arch/southern-islands/timing/mem-config.c
+===================================================================
+--- src/arch/southern-islands/timing/mem-config.c	(revision 2055)
++++ src/arch/southern-islands/timing/mem-config.c	(working copy)
+@@ -37,6 +37,13 @@
+ 
+ 	int i;
+ 
++	if(1 /* si_gpu_fused_device == 1 */) {
++		SIGpuMemConfigFused(self, config);
++		return;
++	}
++
++	warning("Memory is not fused");
++
+ 	/* Cache geometry for vector L1 */
+ 	snprintf(section, sizeof section, "CacheGeometry si-geo-vector-l1");
+ 	config_write_int(config, section, "Sets", 64);
+Index: src/arch/southern-islands/timing/gpu.c
+===================================================================
+--- src/arch/southern-islands/timing/gpu.c	(revision 2055)
++++ src/arch/southern-islands/timing/gpu.c	(working copy)
+@@ -241,12 +241,14 @@
+ 
+ int si_trace_category;
+ 
+-int si_gpu_fused_device;
++int si_gpu_fused_device = 1;
+ 
+ /* Default parameters based on the AMD Radeon HD 7970 */
+ unsigned long long si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
+ unsigned int si_gpu_device_vendor_id = 1234; /* Completely arbitrary */
+ 
++unsigned int si_gpu_device_tum_supported = 1;
++
+ char *si_gpu_device_profile = "FULL_PROFILE";
+ char *si_gpu_device_name = "Multi2Sim Southern Islands GPU";
+ char *si_gpu_device_vendor = "www.multi2sim.org";
+Index: src/arch/southern-islands/timing/gpu.h
+===================================================================
+--- src/arch/southern-islands/timing/gpu.h	(revision 2055)
++++ src/arch/southern-islands/timing/gpu.h	(working copy)
+@@ -43,6 +43,8 @@
+ extern unsigned long long si_gpu_device_type;
+ extern unsigned int si_gpu_device_vendor_id;
+ 
++extern unsigned int si_gpu_device_tum_supported;
++
+ extern char *si_gpu_device_profile;
+ extern char *si_gpu_device_name;
+ extern char *si_gpu_device_vendor;
+Index: runtime/opencl/device.c
+===================================================================
+--- runtime/opencl/device.c	(revision 2055)
++++ runtime/opencl/device.c	(working copy)
+@@ -649,6 +649,14 @@
+ 			param_value, 
+ 			param_value_size_ret);
+ 
++	case CL_DEVICE_EXT_TUM:
++		return opencl_set_param(
++			&device->tum_supported,
++			sizeof(int),
++			param_value_size,
++			param_value,
++			param_value_size_ret);
++
+ 	case CL_DRIVER_VERSION:
+ 		return opencl_set_string(
+ 			device->driver_version, 
+Index: runtime/opencl/device.h
+===================================================================
+--- runtime/opencl/device.h	(revision 2055)
++++ runtime/opencl/device.h	(working copy)
+@@ -79,6 +79,7 @@
+ 	cl_device_type type;
+ 	const char *vendor;
+ 	cl_uint vendor_id;
++	cl_uint tum_supported;
+ 	const char *version;
+ 	const char *driver_version;
+ 
+Index: runtime/opencl/kernel.c
+===================================================================
+--- runtime/opencl/kernel.c	(revision 2055)
++++ runtime/opencl/kernel.c	(working copy)
+@@ -344,7 +344,7 @@
+ 
+ 	ndrange->arch_ndrange = device->arch_ndrange_create_func(ndrange,
+ 		arch_kernel, work_dim, global_work_offset, global_work_size,
+-		local_work_size, 0);
++		local_work_size, 1);
+ 
+ 	return ndrange;
+ }
+Index: runtime/include/CL/cl.h
+===================================================================
+--- runtime/include/CL/cl.h	(revision 2055)
++++ runtime/include/CL/cl.h	(working copy)
+@@ -193,6 +193,9 @@
+ #define CL_DEVICE_PREFERRED_INTEROP_USER_SYNC       0x1048
+ #define CL_DEVICE_PRINTF_BUFFER_SIZE                0x1049
+ 
++/* cl_device_info - extensions */
++#define CL_DEVICE_EXT_TUM                           0x1050
++
+ /* cl_device_fp_config - bitfield */
+ #define CL_FP_DENORM                                (1 << 0)
+ #define CL_FP_INF_NAN                               (1 << 1)

@@ -1,0 +1,91 @@
+Buffer functions comprise a class of OpenCL API that are responsible for
+initiating device memory allocation and initiation reads/writes between host
+and device memory. To accomplish {Goal 1} and {Goal 2}, these functions need
+to be modified. Any device memory allocation needs to be skipped since the
+allocation has already been handled in host memory. Any reference to device
+memory and device pointers should be changed to host memory and host pointers
+respectively.
+
+Examples of functions in this class include: clCreateBuffer[2],
+clEnqueueReadBuffer[3], and clEnqueueWriteBuffer[4].
+---
+Index: runtime/opencl/mem.c
+===================================================================
+--- runtime/opencl/mem.c	(revision 2055)
++++ runtime/opencl/mem.c	(working copy)
+@@ -112,8 +112,9 @@
+ 	}
+ 
+ 	/* Check combination of arguments */
+-	if (((flags & CL_MEM_USE_HOST_PTR) ||
+-		(flags & CL_MEM_COPY_HOST_PTR)) && !host_ptr)
++	if (((flags & CL_MEM_USE_HOST_PTR) && !host_ptr)  ||
++	    ((flags & CL_MEM_COPY_HOST_PTR) && !host_ptr) ||
++	    ((flags & CL_MEM_COPY_HOST_PTR) && (flags & CL_MEM_EXT_TUM)))
+ 	{
+ 		if (errcode_ret)
+ 			*errcode_ret = CL_INVALID_HOST_PTR;
+@@ -129,22 +130,36 @@
+ 	/* Create memory object */
+ 	mem = opencl_mem_create();
+ 
+-	/* Allocate the memory object in the device. */
+-	assert(device->arch_device_mem_alloc_func);
+-	mem->device_ptr = device->arch_device_mem_alloc_func(device->arch_device, size);
+-	mem->device = device;
+-	mem->size = size;
++	if(flags & CL_MEM_EXT_TUM) {
++		mem->device_ptr = host_ptr;
++		mem->device = device;
++		mem->size = size;
++	} else {
++		/* Allocate the memory object in the device. */
++		assert(device->arch_device_mem_alloc_func);
++		mem->device_ptr = device->arch_device_mem_alloc_func(device->arch_device, size);
++		mem->device = device;
++		mem->size = size;
++	}
+ 
+-	/* Save host pointer, if given */
+-	mem->use_host_ptr = (flags & CL_MEM_USE_HOST_PTR) > 0;
+-	if (mem->use_host_ptr)
++	if((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_EXT_TUM)) {
++		/* Save host pointer, if given */
++		mem->use_host_ptr = 1;
+ 		mem->host_ptr = host_ptr;
++	} else {
++		mem->use_host_ptr = 0;
++		mem->host_ptr = NULL;
++	}
+ 
+-	/* Copy buffer contents */
+-	assert(device->arch_device_mem_write_func);
+-	if ((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR))
+-		device->arch_device_mem_write_func(device->arch_device,
+-				mem->device_ptr, host_ptr, size);
++	if(flags & CL_MEM_EXT_TUM) {
++		/* noop */
++	} else {
++		/* Copy buffer contents */
++		assert(device->arch_device_mem_write_func);
++		if ((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR))
++			device->arch_device_mem_write_func(device->arch_device,
++					mem->device_ptr, host_ptr, size);
++	}
+ 
+ 	/* Success */
+ 	if (errcode_ret)
+Index: runtime/include/CL/cl.h
+===================================================================
+--- runtime/include/CL/cl.h	(revision 2055)
++++ runtime/include/CL/cl.h	(working copy)
+@@ -262,6 +262,9 @@
+ #define CL_MEM_HOST_READ_ONLY                       (1 << 8)
+ #define CL_MEM_HOST_NO_ACCESS                       (1 << 9)
+ 
++/* cl_mem_flags extensions - bitfield */
++#define CL_MEM_EXT_TUM                              (1 << 10)
++
+ /* cl_mem_migration_flags - bitfield */
+ #define CL_MIGRATE_MEM_OBJECT_HOST                  (1 << 0)
+ #define CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED     (1 << 1)
