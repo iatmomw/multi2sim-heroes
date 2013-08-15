@@ -1,0 +1,13 @@
+Index: src/mem-system/memory.c
+===================================================================
+--- src/mem-system/memory.c	(revision 2093)
++++ src/mem-system/memory.c	(working copy)
+@@ -31,7 +31,7 @@
+ unsigned long mem_max_mapped_space = 0;
+ 
+ /* Safe mode */
+-int mem_safe_mode = 1;
++int mem_safe_mode = 0;
+ 
+ 
+ /* Return mem page corresponding to an address. */

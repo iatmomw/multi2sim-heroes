@@ -32,3 +32,14 @@ Because the approach to solve this problem is evolving rapidly, the documentatio
 [4] http://www.khronos.org/registry/cl/sdk/1.2/docs/man/xhtml/clEnqueueWriteBuffer.html
 [5] http://www.khronos.org/registry/cl/sdk/1.2/docs/man/xhtml/clSetKernelArg.html
 
+Argument functions comprise a class of OpenCL API that are responsible for
+providing pointers to device memory and constant values for use in device
+computation. These need to be modified to ensure that any pointers provided
+represent a host memory space rather than a device space.
+
+An example of a function in this class is clSetKernelArg[5].
+
+It is possible to take advantage of Multi2Sim's implementation and avoid the
+need to modify these functions by carefully handling pointers in the buffer
+functions.
+---
