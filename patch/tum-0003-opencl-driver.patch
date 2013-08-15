@@ -1,30 +1,8 @@
-Index: runtime/opencl/kernel.c
-===================================================================
---- runtime/opencl/kernel.c	(revision 2093)
-+++ runtime/opencl/kernel.c	(working copy)
-@@ -344,7 +344,7 @@
- 
- 	ndrange->arch_ndrange = device->arch_ndrange_create_func(ndrange,
- 		arch_kernel, work_dim, global_work_offset, global_work_size,
--		local_work_size, 0);
-+		local_work_size, 1);
- 
- 	return ndrange;
- }
 Index: src/arch/southern-islands/timing/gpu.c
 ===================================================================
 --- src/arch/southern-islands/timing/gpu.c	(revision 2093)
 +++ src/arch/southern-islands/timing/gpu.c	(working copy)
-@@ -241,7 +241,7 @@
- 
- int si_trace_category;
- 
--int si_gpu_fused_device;
-+int si_gpu_fused_device = 1;
- 
- /* Default parameters based on the AMD Radeon HD 7970 */
- unsigned long long si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
-@@ -1275,7 +1275,7 @@
+@@ -1280,7 +1282,7 @@
  	asTiming(self)->DumpSummary = SIGpuDumpSummary;
  	asTiming(self)->Run = SIGpuRun;
  	asTiming(self)->MemConfigCheck = SIGpuMemConfigCheck;
