@@ -41,6 +41,9 @@ Many obscure issues were encountered in the process of integrating the required 
 5. Remaining issues
 
 6. Future Work
+As mentioned previously, this implementation is meant to serve as a tool for collecting data in support of a thesis paper to be written in the second half of 2013. The mentioned remaining issues will be resolved and the patch will be further polished and eventually submitted for inclusion in upstream Multi2Sim. While it is clear that some sort of improvement in performance (cycle count and cache hit) will be seen using this model for benchmarks that exhibit high traffic between host and device, the magnitude, contributing factors, and optimization of this approach are not clear and will be explored. Interesting configurations should be trivial to test such as a host and device sharing a common L2 cache.
+
+This is not only exciting for the purposes of my thesis, however. Since the majority of changes that were made in my patchset lie in the architecture independent portions of the code, any new architecture implemented in Multi2Sim can take advantage of them. The patchset may offer a starting point for another individual to integrate an existing hardware model into Multi2Sim or integrate Multi2Sim's memory and OpenCL model into an existing simulator to use as a production tool rather than just a research tool.
 
 7. Reference
 [1] http://www.khronos.org/registry/cl/sdk/1.2/docs/man/xhtml/clGetDeviceInfo.html
