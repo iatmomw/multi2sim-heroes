@@ -1,6 +1,6 @@
 Index: src/arch/southern-islands/timing/gpu.c
 ===================================================================
---- src/arch/southern-islands/timing/gpu.c	(revision 2093)
+--- src/arch/southern-islands/timing/gpu.c	(revision 2100)
 +++ src/arch/southern-islands/timing/gpu.c	(working copy)
 @@ -1280,7 +1282,7 @@
  	asTiming(self)->DumpSummary = SIGpuDumpSummary;
@@ -13,7 +13,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  
 Index: src/driver/opencl/opencl.c
 ===================================================================
---- src/driver/opencl/opencl.c	(revision 2093)
+--- src/driver/opencl/opencl.c	(revision 2100)
 +++ src/driver/opencl/opencl.c	(working copy)
 @@ -225,6 +225,11 @@
  	unsigned int version_ptr;

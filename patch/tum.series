@@ -1,7 +1,7 @@
 # series-tum: Implement truly unified memory modeling in Multi2Sim
 #
 # Patch apply
-#   r2074 : OK
+#   r2100 : OK
 
 # Phase 1 - OpenCL Runtime
 # The OpenCL runtime is responsible for the user-mode pieces of OpenCL. The

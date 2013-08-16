@@ -11,7 +11,7 @@ clEnqueueReadBuffer[3], and clEnqueueWriteBuffer[4].
 ---
 Index: runtime/opencl/mem.c
 ===================================================================
---- runtime/opencl/mem.c	(revision 2055)
+--- runtime/opencl/mem.c	(revision 2100)
 +++ runtime/opencl/mem.c	(working copy)
 @@ -112,8 +112,9 @@
  	}
@@ -77,7 +77,7 @@ Index: runtime/opencl/mem.c
  	if (errcode_ret)
 Index: runtime/include/CL/cl.h
 ===================================================================
---- runtime/include/CL/cl.h	(revision 2055)
+--- runtime/include/CL/cl.h	(revision 2100)
 +++ runtime/include/CL/cl.h	(working copy)
 @@ -262,6 +262,9 @@
  #define CL_MEM_HOST_READ_ONLY                       (1 << 8)

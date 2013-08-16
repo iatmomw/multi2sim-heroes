@@ -16,7 +16,7 @@ this feature.
 ---
 Index: src/arch/southern-islands/timing/mem-config.c
 ===================================================================
---- src/arch/southern-islands/timing/mem-config.c	(revision 2055)
+--- src/arch/southern-islands/timing/mem-config.c	(revision 2100)
 +++ src/arch/southern-islands/timing/mem-config.c	(working copy)
 @@ -37,6 +37,13 @@
  
@@ -34,7 +34,7 @@ Index: src/arch/southern-islands/timing/mem-config.c
  	config_write_int(config, section, "Sets", 64);
 Index: src/arch/southern-islands/timing/gpu.c
 ===================================================================
---- src/arch/southern-islands/timing/gpu.c	(revision 2055)
+--- src/arch/southern-islands/timing/gpu.c	(revision 2100)
 +++ src/arch/southern-islands/timing/gpu.c	(working copy)
 @@ -241,12 +241,14 @@
  
@@ -54,7 +54,7 @@ Index: src/arch/southern-islands/timing/gpu.c
  char *si_gpu_device_vendor = "www.multi2sim.org";
 Index: src/arch/southern-islands/timing/gpu.h
 ===================================================================
---- src/arch/southern-islands/timing/gpu.h	(revision 2055)
+--- src/arch/southern-islands/timing/gpu.h	(revision 2100)
 +++ src/arch/southern-islands/timing/gpu.h	(working copy)
 @@ -43,6 +43,8 @@
  extern unsigned long long si_gpu_device_type;
@@ -67,7 +67,7 @@ Index: src/arch/southern-islands/timing/gpu.h
  extern char *si_gpu_device_vendor;
 Index: runtime/opencl/device.c
 ===================================================================
---- runtime/opencl/device.c	(revision 2055)
+--- runtime/opencl/device.c	(revision 2100)
 +++ runtime/opencl/device.c	(working copy)
 @@ -649,6 +649,14 @@
  			param_value, 
@@ -86,7 +86,7 @@ Index: runtime/opencl/device.c
  			device->driver_version, 
 Index: runtime/opencl/device.h
 ===================================================================
---- runtime/opencl/device.h	(revision 2055)
+--- runtime/opencl/device.h	(revision 2100)
 +++ runtime/opencl/device.h	(working copy)
 @@ -79,6 +79,7 @@
  	cl_device_type type;
@@ -98,7 +98,7 @@ Index: runtime/opencl/device.h
  
 Index: runtime/opencl/kernel.c
 ===================================================================
---- runtime/opencl/kernel.c	(revision 2055)
+--- runtime/opencl/kernel.c	(revision 2100)
 +++ runtime/opencl/kernel.c	(working copy)
 @@ -344,7 +344,7 @@
  
@@ -111,7 +111,7 @@ Index: runtime/opencl/kernel.c
  }
 Index: runtime/include/CL/cl.h
 ===================================================================
---- runtime/include/CL/cl.h	(revision 2055)
+--- runtime/include/CL/cl.h	(revision 2100)
 +++ runtime/include/CL/cl.h	(working copy)
 @@ -193,6 +193,9 @@
  #define CL_DEVICE_PREFERRED_INTEROP_USER_SYNC       0x1048
