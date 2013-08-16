@@ -7,20 +7,11 @@
 # The OpenCL runtime is responsible for the user-mode pieces of OpenCL. The
 # full source of this runtime is available as part of Multi2Sim in
 # "runtime/opencl".
-mtk05684-tum-0001-patch-buffer-functions.patch
-mtk05684-tum-0002-patch-property-functions.patch
-mtk05684-tum-0003-patch-argument-functions.patch
-
-# Phase 1.5 - Bridge phases 1 and 2
-mtk05684-tum-0004-patch-device-configuration.patch
+tum-0001-patch-buffer-functions.patch
+tum-0002-patch-property-functions.patch
 
 # Phase 2 - OpenCL Kernel
 # The OpenCL kernel driver is responsible for the kernel-mode pieces of OpenCL.
 # The full source of this kernel driver is available as part of Multi2Sim in
 # "src/driver/opencl".
-
-# Phase 3 - Hardware Model
-# TLB - Would it impact simulation?
-# Shared page table - After unifying the memory interface between host and
-#   device in {Phase 1} and {Phase 2}, is the page table already shared?
-
+tum-0003-opencl-driver.patch
