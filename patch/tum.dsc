@@ -14,12 +14,6 @@ From this analogy, it is clear that user-mode/runtime code is not hardware-aware
 
 Unified-memory (UM) vs truly unified memory (TUM): In TUM, memory address space is completely shared between host and device. This is in contrast to UM which may be the same physical memory unit but the space addressable by the CPU and the space addressable by the GPU are mutually exclusive. To access data in the other space, a copy must be performed to bring the data into the appropriate memory space. TUM offers the benefit of avoiding this potentially expensive copy.
 
-3. Motivation
-* Eliminate costly data copies
-* More coherence
-* Model for future platforms
-* Exciting and new
-
 4. Current vs desired state of Multi2Sim Implementation
 Without special configuration, Multi2Sim uses entirely disjoint memory spaces for host and device that each have their own unique address space. This model is representative of existing discrete GPU / CPU heterogeneous systems. Big limitations that such a model experience are extremely expensive memory transfers between host and device and missed opportunities for the device to utilize memory cached in the host memory hierarchy and opportunities for the host to utilize memory cached in the device memory hierarchy.
 
